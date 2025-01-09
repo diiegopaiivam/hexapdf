@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -41,10 +41,7 @@ require 'hexapdf/layout/frame'
 module HexaPDF
   module Layout
 
-    # A PageStyle defines the dimensions of a page, its initial look, the Frame for object placement
-    # and which page style should be used next.
-    #
-    # This class is used by HexaPDF::Composer to style the individual pages.
+    # A PageStyle defines the initial look of a page and the placement of one or more frames.
     class PageStyle
 
       # The page size.
@@ -68,15 +65,14 @@ module HexaPDF
       # The callable object is given a canvas and the page style as arguments. It needs to draw the
       # initial content of the page. Note that the graphics state of the canvas is *not* saved
       # before executing the template code and restored afterwards. If this is needed, the object
-      # needs to do it itself. The #next_style attribute can optionally be set.
+      # needs to do it itself.
       #
-      # Furthermore, the callable object should set the #frame that defines the area on the page
-      # where content should be placed. The #create_frame method can be used for easily creating a
-      # rectangular frame.
+      # Furthermore it should set the #frame and #next_style attributes appropriately, if not done
+      # beforehand. The #create_frame method can be used for easily creating a rectangular frame.
       #
       # Example:
       #
-      #   page_style.template = lambda do |canvas, style|
+      #   page_style.template = lambda do |canvas, style
       #     box = canvas.context.box
       #     canvas.fill_color("fd0") do
       #       canvas.rectangle(0, 0, box.width, box.height).fill
@@ -85,24 +81,22 @@ module HexaPDF
       #   end
       attr_accessor :template
 
-      # The Frame object that defines the area for the last page created with #create_page where
-      # content should be placed.
+      # The HexaPDF::Layout::Frame object that defines the area on the page where content should be
+      # placed.
       #
-      # This value is usually updated during execution of the #template. If the value is not
-      # updated, a frame covering the page except for a default margin on all sides is set during
-      # #create_page.
+      # This can either be set beforehand or during execution of the #template.
+      #
+      # If no frame has been set, a frame covering the page except for a default margin on all sides
+      # is set during #create_page.
       attr_accessor :frame
 
       # Defines the name of the page style that should be used for the next page.
-      #
-      # Note that this value can be different each time a new page is created via #create_page.
       #
       # If this attribute is +nil+ (the default), it means that this style should be used again.
       attr_accessor :next_style
 
       # Creates a new page style instance for the given page size, orientation and next style
-      # values. If a block is given, it is used as #template for defining the initial content of a
-      # page.
+      # values. If a block is given, it is used as template for defining the initial content.
       #
       # Example:
       #
@@ -119,15 +113,14 @@ module HexaPDF
         @next_style = next_style
       end
 
-      # Creates a new page in the given document using this page style and returns it.
+      # Creates a new page in the given document with this page style and returns it.
       #
-      # If the #frame has not changed during execution of the #template, a default frame covering
-      # the whole page except a margin of 36 is assigned.
+      # If #frame has not been set beforehand or during execution of the #template, a default frame
+      # covering the whole page except a margin of 36 is created.
       def create_page(document)
-        frame_before = @frame
         page = document.pages.create(media_box: page_size, orientation: orientation)
         template&.call(page.canvas, self)
-        self.frame = create_frame(page, 36) if @frame.equal?(frame_before)
+        self.frame ||= create_frame(page, 36)
         page
       end
 

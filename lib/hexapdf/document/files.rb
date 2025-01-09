@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -70,9 +70,6 @@ module HexaPDF
       # description::
       #     A description of the file.
       #
-      # mime_type::
-      #     The MIME type that should be set for embedded files (so only used if +embed+ is +true+).
-      #
       # embed::
       #     When an IO object is given, it is always embedded and this option is ignored.
       #
@@ -80,7 +77,7 @@ module HexaPDF
       #     only a reference to it is stored.
       #
       # See: HexaPDF::Type::FileSpecification
-      def add(file_or_io, name: nil, description: nil, mime_type: nil, embed: true)
+      def add(file_or_io, name: nil, description: nil, embed: true)
         name ||= File.basename(file_or_io) if file_or_io.kind_of?(String)
         if name.nil?
           raise ArgumentError, "The name argument is mandatory when given an IO object"
@@ -89,9 +86,7 @@ module HexaPDF
         spec = @document.add({Type: :Filespec})
         spec.path = name
         spec[:Desc] = description if description
-        if embed || !file_or_io.kind_of?(String)
-          spec.embed(file_or_io, name: name, mime_type: mime_type, register: true)
-        end
+        spec.embed(file_or_io, name: name, register: true) if embed || !file_or_io.kind_of?(String)
         spec
       end
 

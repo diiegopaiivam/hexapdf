@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -117,11 +117,6 @@ module HexaPDF
 
       def execute(file, *commands) #:nodoc:
         with_document(file, password: @password) do |doc|
-          doc.config['font.on_missing_unicode_mapping'] = lambda do |code, font|
-            $stderr.puts("No Unicode mapping for code point #{code} in font #{font[:BaseFont]}, " \
-                         "using the Unicode replacement character")
-            "\u{FFFD}"
-          end
           @doc = doc
           if commands.empty?
             begin
@@ -395,12 +390,9 @@ module HexaPDF
         end
         io = @doc.revisions.parser.io
 
+        startxrefs = @doc.revisions.map {|rev| rev.trailer[:Prev] }
         io.seek(0, IO::SEEK_END)
-        startxrefs = @doc.revisions.map {|rev| rev.trailer[:Prev] } <<
-                     @doc.revisions.parser.startxref_offset <<
-                     io.pos
-        startxrefs.sort!
-        startxrefs.shift
+        startxrefs.push(@doc.revisions.parser.startxref_offset, io.pos).shift
 
         @doc.revisions.each_with_index.map do |rev, index|
           end_index = 0

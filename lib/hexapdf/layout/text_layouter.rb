@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -218,10 +218,7 @@ module HexaPDF
 
         # Breaks are detected at: space, tab, zero-width-space, non-breaking space, hyphen,
         # soft-hypen and any valid Unicode newline separator
-        BREAK_CHARS = {}
-        " \u{A}\u{B}\u{C}\u{D}\u{85}\u{2028}\u{2029}\t\u{200B}\u{00AD}\u{00A0}-".each_char do |c|
-          BREAK_CHARS[c] = true
-        end
+        BREAK_RE = /[ \u{A}-\u{D}\u{85}\u{2028}\u{2029}\t\u{200B}\u{00AD}\u{00A0}-]/
 
         # Breaks the items (an array of InlineBox and TextFragment objects) into atomic pieces
         # wrapped by Box, Glue or Penalty items, and returns those as an array.
@@ -238,7 +235,7 @@ module HexaPDF
                 # Collect characters and kerning values until break character is encountered
                 box_items = []
                 while (glyph = item.items[i]) &&
-                    (glyph.kind_of?(Numeric) || !BREAK_CHARS.key?(glyph.str))
+                    (glyph.kind_of?(Numeric) || !BREAK_RE.match?(glyph.str))
                   box_items << glyph
                   i += 1
                 end
@@ -431,7 +428,9 @@ module HexaPDF
           end
 
           line = create_unjustified_line
-          last_line_used = (item.nil? && !line.items.empty? ? yield(line, nil) : true)
+          last_line_used = true
+          last_line_used = yield(line, nil) if item.nil? && !line.items.empty?
+
           item.nil? && last_line_used ? [] : @items[@beginning_of_line_index..-1]
         end
 
@@ -501,7 +500,9 @@ module HexaPDF
           end
 
           line = create_unjustified_line
-          last_line_used = (item.nil? && !line.items.empty? ? yield(line, nil) : true)
+          last_line_used = true
+          last_line_used = yield(line, nil) if item.nil? && !line.items.empty?
+
           item.nil? && last_line_used ? [] : @items[@beginning_of_line_index..-1]
         end
 

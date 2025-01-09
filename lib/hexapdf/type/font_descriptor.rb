@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -57,7 +57,7 @@ module HexaPDF
       define_field :FontStretch,  type: Symbol, version: '1.5',
         allowed_values: [:UltraCondensed, :ExtraCondensed, :Condensed, :SemiCondensed,
                          :Normal, :SemiExpanded, :Expanded, :ExtraExpanded, :UltraExpanded]
-      define_field :FontWeight,   type: Integer, version: '1.5' # also see validation
+      define_field :FontWeight,   type: Numeric, version: '1.5'
       define_field :Flags,        type: Integer, required: true
       define_field :FontBBox,     type: Rectangle
       define_field :ItalicAngle,  type: Numeric, required: true
@@ -76,7 +76,6 @@ module HexaPDF
       define_field :FontFile3,    type: Stream, version: '1.2'
       define_field :CharSet,      type: [PDFByteString, String], version: '1.1'
 
-      # From PDF2.0 s9.8.3.1
       define_field :Style,        type: Dictionary
       define_field :Lang,         type: Symbol, version: '1.5'
       define_field :FD,           type: Dictionary
@@ -99,13 +98,13 @@ module HexaPDF
 
         font_weight = self[:FontWeight]
         if font_weight && !ALLOWED_FONT_WEIGHTS.include?(font_weight)
-          yield("Field FontWeight contains the disallowed value #{font_weight}", true)
+          yield("Field FontWeight does not contain an allowed value", true)
           delete(:FontWeight)
         end
 
         descent = self[:Descent]
         if descent && descent > 0
-          yield("The /Descent value needs to be zero or negative", true)
+          yield("The /Descent value needs to be a negative number", true)
           self[:Descent] = -descent
         end
       end

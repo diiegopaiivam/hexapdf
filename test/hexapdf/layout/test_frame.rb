@@ -5,6 +5,37 @@ require 'hexapdf/layout/frame'
 require 'hexapdf/layout/box'
 require 'hexapdf/document'
 
+describe HexaPDF::Layout::Frame::FitResult do
+  it "shows the box's mask area on #draw when using debug output" do
+    doc = HexaPDF::Document.new(config: {'debug' => true})
+    canvas = doc.pages.add.canvas
+    box = HexaPDF::Layout::Box.create(width: 20, height: 20) {}
+    frame = HexaPDF::Layout::Frame.new(5, 10, 100, 150)
+    result = HexaPDF::Layout::Frame::FitResult.new(frame, box)
+    result.mask = Geom2D::Rectangle(0, 0, 20, 20)
+    result.x = result.y = 0
+    result.draw(canvas, dx: 10, dy: 15)
+    assert_equal(<<~CONTENTS, canvas.contents)
+      /OC /P1 BDC
+      q
+      1 0 0 1 10 15 cm
+      0.0 0.501961 0.0 rg
+      0.0 0.392157 0.0 RG
+      /GS1 gs
+      0 0 20 20 re
+      B
+      Q
+      EMC
+      q
+      1 0 0 1 10 15 cm
+      Q
+    CONTENTS
+    ocg = doc.optional_content.ocgs.first
+    assert_equal([['Debug', ['Page 1', ocg]]], doc.optional_content.default_configuration[:Order])
+    assert_match(/10,15-20x20/, ocg.name)
+  end
+end
+
 describe HexaPDF::Layout::Frame do
   before do
     @frame = HexaPDF::Layout::Frame.new(5, 10, 100, 150)
@@ -316,20 +347,10 @@ describe HexaPDF::Layout::Frame do
 
     describe "flowing boxes" do
       it "flows inside the frame's outline" do
-        remove_area(:left)
         check_box({width: 10, height: 20, margin: 10, position: :flow},
-                  [10, 90],
+                  [0, 90],
                   [10, 80, 110, 110],
-                  [[[20, 10], [110, 10], [110, 80], [20, 80]]])
-        assert_equal(10, @box.fit_result.x)
-      end
-
-      it "doesn't overwrite fit_result.x" do
-        box = HexaPDF::Layout::Box.create(position: :flow) {}
-        box.define_singleton_method(:supports_position_flow?) { true }
-        box.define_singleton_method(:fit_content) {|*args| fit_result.x = 30; super(*args) }
-        fit_result = @frame.fit(box)
-        assert_equal(30, fit_result.x)
+                  [[[10, 10], [110, 10], [110, 80], [10, 80]]])
       end
 
       it "uses position=default if the box indicates it doesn't support flowing contents" do
@@ -434,13 +455,21 @@ describe HexaPDF::Layout::Frame do
       refute(@frame.fit(box).success?)
     end
 
-    it "doesn't do post-fitting tasks if fitting is a failure" do
-      box = HexaPDF::Layout::Box.create(width: 400)
-      result = @frame.fit(box)
-      assert(result.failure?)
-      assert_nil(result.x)
-      assert_nil(result.y)
-      assert_nil(result.mask)
+    it "handles (but doesn't draw) the box if the its height or width is zero" do
+      result = Minitest::Mock.new
+      box = Minitest::Mock.new
+
+      result.expect(:box, box)
+      box.expect(:height, 0)
+      @frame.draw(@canvas, result)
+
+      result.expect(:box, box)
+      box.expect(:height, 5)
+      result.expect(:box, box)
+      box.expect(:width, 0)
+      @frame.draw(@canvas, result)
+
+      result.verify
     end
   end
 

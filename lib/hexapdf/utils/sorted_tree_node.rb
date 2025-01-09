@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -174,7 +174,6 @@ module HexaPDF
           elsif node.key?(:Kids)
             index = find_in_intermediate_node(node[:Kids], key)
             node = node[:Kids][index]
-            node = document.wrap(node, type: self.class) if node
             break unless node && key >= node[:Limits][0] && key <= node[:Limits][1]
           else
             break
@@ -195,7 +194,7 @@ module HexaPDF
         container_name = leaf_node_container_name
         stack = [self]
         until stack.empty?
-          node = document.wrap(stack.pop, type: self.class)
+          node = stack.pop
           if node.key?(container_name)
             data = node[container_name]
             index = 0
@@ -218,7 +217,7 @@ module HexaPDF
       def path_to_key(node, key, stack)
         return unless node.key?(:Kids)
         index = find_in_intermediate_node(node[:Kids], key)
-        stack << document.wrap(node[:Kids][index], type: self.class)
+        stack << node[:Kids][index]
         path_to_key(stack.last, key, stack)
       end
 
@@ -307,15 +306,6 @@ module HexaPDF
       def perform_validation
         super
         container_name = leaf_node_container_name
-
-        if key?(:Kids)
-          self[:Kids].each do |kid|
-            unless kid.indirect?
-              yield("Children of sorted tree nodes must be indirect", true)
-              document.add(kid)
-            end
-          end
-        end
 
         # All keys of the container must be lexically ordered strings and the container must be
         # correctly formatted

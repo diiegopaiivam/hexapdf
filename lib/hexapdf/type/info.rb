@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -57,8 +57,8 @@ module HexaPDF
       define_field :Producer,     type: String
       define_field :CreationDate, type: PDFDate
       define_field :ModDate,      type: PDFDate
-      define_field :Trapped,      type: Symbol, version: '1.3', default: :Unknown,
-                   allowed_values: [:True, :False, :Unknown]
+      define_field :Trapped,      type: Symbol, version: '1.3',
+        allowed_values: [:True, :False, :Unknown]
 
       # Info dictionaries must always be indirect.
       def must_be_indirect?

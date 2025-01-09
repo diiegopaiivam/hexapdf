@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -81,7 +81,6 @@ module HexaPDF
         define_field :CO,              type: PDFArray, version: '1.3'
         define_field :DR,              type: :XXResources
         define_field :DA,              type: String
-        define_field :Q,               type: Integer
         define_field :XFA,             type: [Stream, PDFArray], version: '1.5'
 
         bit_field(:signature_flags, {signatures_exist: 0, append_only: 1},
@@ -183,18 +182,24 @@ module HexaPDF
         # The optional keyword arguments allow setting often used properties of the field:
         #
         # +font+::
-        #     The font that should be used for the text of the field. If not specified, it
-        #     defaults to Helvetica.
+        #     The font that should be used for the text of the field. If +font_size+, +font_options+
+        #     or +font_color+ is specified but +font+ isn't, the font Helvetica is used.
+        #
+        #     If no font is set on the text field, the default font properties of the AcroForm form
+        #     are used. Note that field specific or form specific font properties have to be set.
+        #     Otherwise there will be an error when trying to generate a visual representation of
+        #     the field value.
         #
         # +font_options+::
-        #     A hash with font options like :variant that should be used. If not specified, it
-        #     defaults to the empty hash.
+        #     A hash with font options like :variant that should be used.
         #
         # +font_size+::
-        #     The font size that should be used. If not specified, it defaults to 0 (= auto-sizing).
+        #     The font size that should be used. If +font+, +font_options+ or +font_color+ is
+        #     specified but +font_size+ isn't, font size defaults to 0 (= auto-sizing).
         #
         # +font_color+::
-        #     The font color that should be used. If not specified, it defaults to 0 (i.e. black).
+        #     The font color that should be used. If +font+, +font_options+ or +font_size+ is
+        #     specified but +font_color+ isn't, font color defaults to 0 (i.e. black).
         #
         # +align+::
         #     The alignment of the text, either :left, :center or :right.
@@ -383,14 +388,13 @@ module HexaPDF
             page_annots = page[:Annots].to_a - to_delete
             page[:Annots].value.replace(page_annots)
           end
+          to_delete.each {|widget| document.delete(widget) }
 
           if field[:Parent]
             field[:Parent][:Kids].delete(field)
           else
             self[:Fields].delete(field)
           end
-
-          to_delete.each {|widget| document.delete(widget) }
           document.delete(field)
         end
 
@@ -435,7 +439,8 @@ module HexaPDF
 
         # Returns the dictionary containing the default resources for form field appearance streams.
         def default_resources
-          self[:DR] ||= document.wrap({}, type: :XXResources)
+          self[:DR] ||= document.wrap({ProcSet: [:PDF, :Text, :ImageB, :ImageC, :ImageI]},
+                                      type: :XXResources)
         end
 
         # Sets the global default appearance string using the provided values or the default values
@@ -517,11 +522,11 @@ module HexaPDF
         #
         # See: JavaScriptActions
         def recalculate_fields
-          (each_field.to_a & self[:CO].to_a).each do |field|
+          self[:CO]&.each do |field|
             field = Field.wrap(document, field)
             next unless field && (calculation_action = field[:AA]&.[](:C))
             result = JavaScriptActions.calculate(self, calculation_action)
-            field.field_value = result if result
+            field.form_field.field_value = result if result
           end
         end
 
@@ -555,11 +560,13 @@ module HexaPDF
         # Applies the given variable field properties to the field.
         def apply_variable_text_properties(field, font: nil, font_options: nil, font_size: nil,
                                            font_color: nil, align: nil)
-          field.set_default_appearance_string(font: font || 'Helvetica',
-                                              font_options: font_options || {},
-                                              font_size: font_size || 0,
-                                              font_color: font_color || 0)
-          field.text_alignment(align || :left)
+          if font || font_options || font_size || font_color
+            field.set_default_appearance_string(font: font || 'Helvetica',
+                                                font_options: font_options || {},
+                                                font_size: font_size || 0,
+                                                font_color: font_color || 0)
+          end
+          field.text_alignment(align) if align
         end
 
         def perform_validation # :nodoc:
@@ -617,6 +624,8 @@ module HexaPDF
             if font_name && !(self[:DR][:Font] && self[:DR][:Font][font_name])
               yield("The font specified in /DA is not in the /DR resource dictionary")
             end
+          else
+            set_default_appearance_string
           end
 
           create_appearances if document.config['acro_form.create_appearances']

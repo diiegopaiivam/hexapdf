@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -57,10 +57,6 @@ module HexaPDF
     class TrueTypeWrapper
 
       # Represents a single glyph of the wrapped font.
-      #
-      # Since some characters/strings may be mapped to the same glyph id by the font's builtin cmap
-      # table, it is possible that different Glyph instances with the same #id but different #str
-      # exist.
       class Glyph
 
         # The associated TrueTypeWrapper object.
@@ -156,7 +152,6 @@ module HexaPDF
         @id_to_glyph = {}
         @codepoint_to_glyph = {}
         @encoded_glyphs = {}
-        @last_char_code = 0
       end
 
       # Returns the type of the font, i.e. :TrueType.
@@ -184,15 +179,14 @@ module HexaPDF
         !@subsetter.nil?
       end
 
-      # Returns a Glyph object for the given glyph ID and +str+ pair.
+      # Returns a Glyph object for the given glyph ID.
       #
-      # The optional argument +str+ should be the string representation of the glyph. It is possible
-      # that multiple strings map to the same glyph (e.g. hyphen and soft-hyphen could be
-      # represented by the same glyph).
+      # The optional argument +str+ should be the string representation of the glyph. Only use it if
+      # it is known,
       #
       # Note: Although this method is public, it should normally not be used by application code!
       def glyph(id, str = nil)
-        @id_to_glyph[[id, str]] ||=
+        @id_to_glyph[id] ||=
           if id >= 0 && id < @wrapped_font[:maxp].num_glyphs
             Glyph.new(self, id, str || (+'' << (@cmap.gid_to_code(id) || 0xFFFD)))
           else
@@ -234,17 +228,14 @@ module HexaPDF
 
       # Encodes the glyph and returns the code string.
       def encode(glyph)
-        (@encoded_glyphs[glyph] ||=
+        (@encoded_glyphs[glyph.id] ||=
           begin
             raise HexaPDF::MissingGlyphError.new(glyph) if glyph.kind_of?(InvalidGlyph)
-            @subsetter.use_glyph(glyph.id) if @subsetter
-            @last_char_code += 1
-            # Handle codes for ASCII characters \r (13), (, ) (40, 41) and \ (92) specially so that
-            # they never appear in the output (PDF serialization would need to escape them)
-            if @last_char_code == 13 || @last_char_code == 40 || @last_char_code == 92
-              @last_char_code += (@last_char_code == 40 ? 2 : 1)
+            if @subsetter
+              [[@subsetter.use_glyph(glyph.id)].pack('n'), glyph]
+            else
+              [[glyph.id].pack('n'), glyph]
             end
-            [[@last_char_code].pack('n'), @last_char_code]
           end)[0]
       end
 
@@ -295,7 +286,7 @@ module HexaPDF
                                                  Supplement: 0},
                                  CIDToGIDMap: :Identity})
         dict = document.add({Type: :Font, Subtype: :Type0, BaseFont: cid_font[:BaseFont],
-                             DescendantFonts: [cid_font]})
+                             Encoding: :'Identity-H', DescendantFonts: [cid_font]})
         dict.font_wrapper = self
 
         document.register_listener(:complete_objects) do
@@ -303,7 +294,6 @@ module HexaPDF
           embed_font(dict, document)
           complete_width_information(dict)
           create_to_unicode_cmap(dict, document)
-          add_encoding_information_cmap(dict, document)
         end
 
         dict
@@ -316,7 +306,7 @@ module HexaPDF
         return unless @subsetter
 
         tag = +''
-        data = @encoded_glyphs.each_with_object(''.b) {|(g, v), s| s << g.id.to_s << v[0] }
+        data = @encoded_glyphs.each_with_object(''.b) {|(id, v), s| s << id.to_s << v[0] }
         hash = Digest::MD5.hexdigest(data << @wrapped_font.font_name).to_i(16)
         while hash != 0 && tag.length < 6
           hash, mod = hash.divmod(UPPERCASE_LETTERS.length)
@@ -346,8 +336,8 @@ module HexaPDF
       # Adds the /DW and /W fields to the CIDFont dictionary.
       def complete_width_information(dict)
         default_width = glyph(3, " ").width.to_i
-        widths = @encoded_glyphs.reject {|g, _| g.width == default_width }.map do |g, _|
-          [(@subsetter ? @subsetter.subset_glyph_id(g.id) : g.id), g.width]
+        widths = @encoded_glyphs.reject {|_, v| v[1].width == default_width }.map do |id, v|
+          [(@subsetter ? @subsetter.subset_glyph_id(id) : id), v[1].width]
         end.sort!
         dict[:DescendantFonts].first.set_widths(widths, default_width: default_width)
       end
@@ -356,39 +346,15 @@ module HexaPDF
       # correctly.
       def create_to_unicode_cmap(dict, document)
         stream = HexaPDF::StreamData.new do
-          mapping = @encoded_glyphs.map do |glyph, (_, char_code)|
+          mapping = @encoded_glyphs.keys.map! do |id|
             # Using 0xFFFD as mentioned in Adobe #5411, last line before section 1.5
-            # TODO: glyph.str assumed to consist of single char, No support for multiple chars
-            [char_code, glyph.str.ord || 0xFFFD]
+            [(@subsetter ? @subsetter.subset_glyph_id(id) : id), @cmap.gid_to_code(id) || 0xFFFD]
           end.sort_by!(&:first)
           HexaPDF::Font::CMap.create_to_unicode_cmap(mapping)
         end
         stream_obj = document.add({}, stream: stream)
         stream_obj.set_filter(:FlateDecode)
         dict[:ToUnicode] = stream_obj
-      end
-
-      # Adds the /Encoding entry to the +dict+.
-      #
-      # This can either be the identity mapping or, if some Unicode codepoints are mapped to the
-      # same glyph, a custom CMap.
-      def add_encoding_information_cmap(dict, document)
-        mapping = @encoded_glyphs.map do |glyph, (_, char_code)|
-          # Using 0xFFFD as mentioned in Adobe #5411, last line before section 1.5
-          [char_code, (@subsetter ? @subsetter.subset_glyph_id(glyph.id) : glyph.id)]
-        end.sort_by!(&:first)
-        if mapping.all? {|char_code, cid| char_code == cid }
-          dict[:Encoding] = :'Identity-H'
-        else
-          stream = HexaPDF::StreamData.new { HexaPDF::Font::CMap.create_cid_cmap(mapping) }
-          stream_obj = document.add({Type: :CMap,
-                                     CMapName: :Custom,
-                                     CIDSystemInfo: {Registry: "Adobe", Ordering: "Identity",
-                                                     Supplement: 0},
-                                    }, stream: stream)
-          stream_obj.set_filter(:FlateDecode)
-          dict[:Encoding] = stream_obj
-        end
       end
 
     end

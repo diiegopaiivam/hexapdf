@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -211,13 +211,6 @@ module HexaPDF
         # The contact information. If used, will be set on the signature dictionary.
         attr_accessor :contact_info
 
-        # The custom signing time.
-        #
-        # The signing time is usually the time when signing actually happens. This is also what
-        # HexaPDF uses. If it is known that signing happened at a different point in time, that time
-        # can be provided using this accessor.
-        attr_accessor :signing_time
-
         # The size of the serialized signature that should be reserved.
         #
         # If this attribute is not set, an empty string will be signed using #sign to determine the
@@ -284,12 +277,11 @@ module HexaPDF
         def finalize_objects(_signature_field, signature)
           signature[:Filter] = :'Adobe.PPKLite'
           signature[:SubFilter] = (signature_type == :pades ? :'ETSI.CAdES.detached' : :'adbe.pkcs7.detached')
-          #signature[:M] = self.signing_time ||= Time.now
+          #signature[:M] = Time.now
           signature[:Reason] = reason if reason
           signature[:Location] = location if location
           signature[:ContactInfo] = contact_info if contact_info
           signature[:Prop_Build] = {App: {Name: :HexaPDF, REx: HexaPDF::VERSION}}
-          signature.document.version = '2.0' if signature_type == :pades
 
           if doc_mdp_permissions
             doc = signature.document
@@ -320,7 +312,6 @@ module HexaPDF
                                      type: signature_type,
                                      certificate: certificate, key: key,
                                      digest_algorithm: digest_algorithm,
-                                     signing_time: signing_time,
                                      timestamp_handler: timestamp_handler,
                                      certificates: certificate_chain, &external_signing).to_der
           else

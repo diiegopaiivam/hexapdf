@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -64,8 +64,6 @@ module HexaPDF
       # no check box may be selected.
       #
       # == Type Specific Field Flags
-      #
-      # See the class description for Field for the general field flags.
       #
       # :no_toggle_to_off:: Only used with radio buttons fields. If this flag is set, one button
       #                     needs to be selected at all times. Otherwise, clicking on the selected

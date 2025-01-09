@@ -65,7 +65,7 @@ module CommonTokenizerTests
       :'The_Key_of_F#_Minor', :AB, :"",
       '[', 5, 6, :Name, ']', '[', 5, 6, :Name, ']',
       '<<', :Name, 5, '>>'
-    ].map {|t| t.respond_to?(:force_encoding) ? t.b : t }
+    ].each {|t| t.force_encoding('BINARY') if t.respond_to?(:force_encoding) }
 
     until expected_tokens.empty?
       expected_token = expected_tokens.shift
@@ -104,11 +104,6 @@ module CommonTokenizerTests
     assert_raises(HexaPDF::MalformedPDFError) { @tokenizer.next_token }
   end
 
-  it "next_token: fails on a closing parenthesis that is not part of a literal string" do
-    create_tokenizer(" )")
-    assert_raises(HexaPDF::MalformedPDFError) { @tokenizer.next_token }
-  end
-
   it "next_token: fails on a missing greater than sign in a hex string" do
     create_tokenizer("<ABCD")
     assert_raises(HexaPDF::MalformedPDFError) { @tokenizer.next_token }
@@ -124,6 +119,11 @@ module CommonTokenizerTests
     token = @tokenizer.next_token
     assert_equal("+", token)
     assert(token.kind_of?(HexaPDF::Tokenizer::Token))
+  end
+
+  it "next_token: should not fail when reading super long numbers" do
+    create_tokenizer("1" << "0" * 10_000)
+    assert_equal(10**10_000, @tokenizer.next_token)
   end
 
   it "next_object: works for all PDF object types, including array and dictionary" do
@@ -177,7 +177,7 @@ module CommonTokenizerTests
   end
 
   it "returns the correct position on operations" do
-    create_tokenizer("hallo du" + " " * 50000 + "hallo du")
+    create_tokenizer("hallo du" << " " * 50000 << "hallo du")
     @tokenizer.next_token
     assert_equal(5, @tokenizer.pos)
 

@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -77,9 +77,9 @@ module HexaPDF
     #
     # One style property, Layout::Style#font, is handled specially:
     #
-    # * If no font is set on a style, the default font specified via the configuration option
-    #   'font.default' is automatically set because otherwise there would be problems with text
-    #   drawing operations (font is the only style property that has no valid default value).
+    # * If no font is set on a style, the font "Times" is automatically set because otherwise there
+    #   would be problems with text drawing operations (font is the only style property that has no
+    #   valid default value).
     #
     # * Standard style objects only allow font wrapper objects to be set via the Layout::Style#font
     #   method. This class makes usage easier by allowing strings or an array [name, options_hash]
@@ -151,9 +151,7 @@ module HexaPDF
         # :nodoc:
         def method_missing(name, *args, **kwargs, &block)
           if @layout.box_creation_method?(name)
-            box = @layout.send(name, *args, **kwargs, &block)
-            @children << box
-            box
+            @children << @layout.send(name, *args, **kwargs, &block)
           else
             super
           end
@@ -176,6 +174,9 @@ module HexaPDF
         end
 
       end
+
+      # The mapping of style name (a Symbol) to Layout::Style instance.
+      attr_reader :styles
 
       # Creates a new Layout object for the given PDF document.
       def initialize(document)
@@ -216,21 +217,6 @@ module HexaPDF
         style = @styles[name] ||= (@styles.key?(base) ? @styles[base].dup : HexaPDF::Layout::Style.new)
         style.update(**properties) unless properties.empty?
         style
-      end
-
-      # :call-seq:
-      #    layout.styles            -> styles
-      #    layout.styles(**mapping)   -> styles
-      #
-      # Returns the mapping of style names to Layout::Style instances. If +mapping+ is provided,
-      # also defines the given styles using #style.
-      #
-      # The argument +mapping+ needs to be a hash mapping a style name (a Symbol) to style
-      # properties. The special key +:base+ can be used to define the base style. For details see
-      # #style.
-      def styles(**mapping)
-        mapping.each {|name, properties| style(name, **properties) } unless mapping.empty?
-        @styles
       end
 
       # Creates an inline box for use together with text fragments.
@@ -356,7 +342,6 @@ module HexaPDF
                                       width: width, height: height, properties: properties,
                                       style: box_style)
       end
-      alias text text_box
 
       # Creates a HexaPDF::Layout::TextBox like #text_box but allows parts of the text to be
       # formatted differently.
@@ -459,7 +444,6 @@ module HexaPDF
         box_class_for_name(:text).new(items: data, width: width, height: height,
                                       properties: properties, style: box_style)
       end
-      alias formatted_text formatted_text_box
 
       # Creates a HexaPDF::Layout::ImageBox for the given image.
       #
@@ -481,7 +465,6 @@ module HexaPDF
         box_class_for_name(:image).new(image: image, width: width, height: height,
                                        properties: properties, style: style)
       end
-      alias image image_box
 
       # This helper class is used by Layout#table_box to allow specifying the keyword arguments used
       # when converting cell data to box instances.
@@ -500,25 +483,8 @@ module HexaPDF
           @number_of_columns = number_of_columns
         end
 
-        # Stores the hash +args+ containing styling properties for the cells specified via the given
-        # 0-based rows and columns.
-        #
-        # Rows and columns can either be single numbers, ranges of numbers or stepped ranges (i.e.
-        # Enumerator::ArithmeticSequence instances).
-        #
-        # Examples:
-        #
-        #   # Gray background for all cells
-        #   args[] = {cell: {background_color: "gray"}}
-        #
-        #   # Cell at (2, 3) gets a bigger font size
-        #   args[2, 3] = {font_size: 50}
-        #
-        #   # First column of every row has bold font
-        #   args[0..-1, 0] = {font: 'Helvetica bold'}
-        #
-        #   # Every second row has a blue background
-        #   args[(0..-1).step(2)] = {cell: {background_color: "blue"}}
+        # Stores the keyword arguments in +args+ for the given 0-based rows and columns which can
+        # either be a single number or a range of numbers.
         def []=(rows = 0..-1, cols = 0..-1, args)
           rows = adjust_range(rows.kind_of?(Integer) ? rows..rows : rows, @number_of_rows)
           cols = adjust_range(cols.kind_of?(Integer) ? cols..cols : cols, @number_of_columns)
@@ -531,7 +497,7 @@ module HexaPDF
         # is merged.
         def retrieve_arguments_for(row, col)
           @argument_infos.each_with_object({}) do |arg_info, result|
-            next unless arg_info.rows.include?(row) && arg_info.cols.include?(col)
+            next unless arg_info.rows.cover?(row) && arg_info.cols.cover?(col)
             if arg_info.args[:cell]
               arg_info.args[:cell] = (result[:cell] || {}).merge(arg_info.args[:cell])
             end
@@ -544,8 +510,7 @@ module HexaPDF
         # Adjusts the +range+ so that both the begin and the end of the range are zero or positive
         # integers smaller than +max+.
         def adjust_range(range, max)
-          r = (range.begin % max)..(range.end % max)
-          range.kind_of?(Range) ? r : r.step(range.step)
+          (range.begin % max)..(range.end % max)
         end
 
       end
@@ -563,8 +528,7 @@ module HexaPDF
       # Additional arguments for the #text_box invocations can be specified using the optional block
       # that yields a CellArgumentCollector instance. This allows customization of the text boxes.
       # By specifying the special key +:cell+ it is also possible to assign style properties to the
-      # cells themselves, irrespective of the type of content of the cells. See
-      # CellArgumentCollector#[]= for details.
+      # cells themselves.
       #
       # See HexaPDF::Layout::TableBox::new for details on +column_widths+, +header+, +footer+, and
       # +cell_style+.
@@ -610,7 +574,6 @@ module HexaPDF
                                        footer: footer, cell_style: cell_style, width: width,
                                        height: height, properties: properties, style: style)
       end
-      alias table table_box
 
       LOREM_IPSUM = [ # :nodoc:
         "Lorem ipsum dolor sit amet, con\u{00AD}sectetur adipis\u{00AD}cing elit, sed " \
@@ -630,13 +593,22 @@ module HexaPDF
       def lorem_ipsum_box(sentences: 4, count: 1, **text_box_properties)
         text_box(([LOREM_IPSUM[0, sentences].join(" ")] * count).join("\n\n"), **text_box_properties)
       end
-      alias lorem_ipsum lorem_ipsum_box
 
-      # Allows creating boxes using more convenient method names: The name of a pre-defined box
-      # class like #column will invoke #box appropriately. Same if used with a '_box' suffix.
+      BOX_METHOD_NAMES = [:text, :formatted_text, :image, :table, :lorem_ipsum] #:nodoc:
+
+      # Allows creating boxes using more convenient method names:
+      #
+      # * #text for #text_box
+      # * #formatted_text for #formatted_text_box
+      # * #image for #image_box
+      # * #lorem_ipsum for #lorem_ipsum_box
+      # * The name of a pre-defined box class like #column will invoke #box appropriately. Same if
+      #   used with a '_box' suffix.
       def method_missing(name, *args, **kwargs, &block)
         name_without_box = name.to_s.sub(/_box$/, '').intern
-        if @document.config['layout.boxes.map'].key?(name_without_box)
+        if BOX_METHOD_NAMES.include?(name)
+          send("#{name}_box", *args, **kwargs, &block)
+        elsif @document.config['layout.boxes.map'].key?(name_without_box)
           box(name_without_box, *args, **kwargs, &block)
         else
           super
@@ -647,8 +619,6 @@ module HexaPDF
       def respond_to_missing?(name, _private)
         box_creation_method?(name) || super
       end
-
-      BOX_METHOD_NAMES = [:text, :formatted_text, :image, :table, :lorem_ipsum] #:nodoc:
 
       # :nodoc:
       def box_creation_method?(name)
@@ -666,8 +636,8 @@ module HexaPDF
         end
       end
 
-      # Retrieves the appropriate HexaPDF::Layout::Style object based on the +style+ and
-      # +properties+ arguments.
+      # Retrieves the appropriate HexaPDF::Layout::Style object based on the +style+ and +properties+
+      # arguments.
       #
       # The +style+ argument specifies the style to retrieve. It can either be a registered style
       # name (see #style), a hash with style properties or +nil+. In the latter case the registered
@@ -676,18 +646,15 @@ module HexaPDF
       # If the +properties+ hash is not empty, the retrieved style is duplicated and the properties
       # hash is applied to it.
       #
-      # Finally, a default font (the one from the :base style or otherwise the one set using the
-      # configuration option 'font.default') is set if necessary to ensure that the style object
-      # works in all cases.
+      # Finally, a default font (the one from the :base style or otherwise 'Times') is set if
+      # necessary to ensure that the style object works in all cases.
       def retrieve_style(style, properties = nil)
         if style.kind_of?(Symbol) && !@styles.key?(style)
           raise HexaPDF::Error, "Style #{style} not defined"
         end
         style = HexaPDF::Layout::Style.create(@styles[style] || style || @styles[:base])
         style = style.dup.update(**properties) unless properties.nil? || properties.empty?
-        unless style.font?
-          style.font(@styles[:base].font? && @styles[:base].font || @document.config['font.default'])
-        end
+        style.font(@styles[:base].font? && @styles[:base].font || 'Times') unless style.font?
         unless style.font.respond_to?(:pdf_object)
           name, options = *style.font
           style.font(@document.fonts.add(name, **(options || {})))

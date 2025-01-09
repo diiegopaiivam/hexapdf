@@ -47,20 +47,21 @@ describe HexaPDF::Content::CanvasComposer do
     end
 
     it "splits the box if possible" do
-      @composer.draw_box(create_box(width: 300, height: 300, style: {position: :float}))
-      box = create_box(style: {mask_mode: :box})
-      box.define_singleton_method(:fit_content) {|*| fit_result.overflow! }
-      box.define_singleton_method(:split_content) { [box, HexaPDF::Layout::Box.new(height: 100) {}] }
+      @composer.draw_box(create_box(width: 400, style: {position: :float}))
+      box = create_box(width: 400, height: 100)
+      box.define_singleton_method(:split) do |*|
+        [box, HexaPDF::Layout::Box.new(height: 100) {}]
+      end
       @composer.draw_box(box)
       assert_operators(@composer.canvas.contents,
                        [[:save_graphics_state],
-                        [:concatenate_matrix, [1, 0, 0, 1, 0, 541.889764]],
+                        [:concatenate_matrix, [1, 0, 0, 1, 0, 0]],
                         [:restore_graphics_state],
                         [:save_graphics_state],
-                        [:concatenate_matrix, [1, 0, 0, 1, 300, 0]],
+                        [:concatenate_matrix, [1, 0, 0, 1, 400, 741.889764]],
                         [:restore_graphics_state],
                         [:save_graphics_state],
-                        [:concatenate_matrix, [1, 0, 0, 1, 0, 441.889764]],
+                        [:concatenate_matrix, [1, 0, 0, 1, 400, 641.889764]],
                         [:restore_graphics_state]])
     end
 
@@ -74,12 +75,6 @@ describe HexaPDF::Content::CanvasComposer do
                         [:save_graphics_state],
                         [:concatenate_matrix, [1, 0, 0, 1, 0, 641.889764]],
                         [:restore_graphics_state]])
-    end
-
-    it "handles truncated boxes correctly" do
-      box = create_box(height: 400, style: {overflow: :truncate})
-      box.define_singleton_method(:fit_content) {|*| fit_result.overflow! }
-      assert_same(box, @composer.draw_box(box))
     end
 
     it "returns the last drawn box" do

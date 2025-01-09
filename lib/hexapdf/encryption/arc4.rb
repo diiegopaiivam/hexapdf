@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -66,14 +66,14 @@ module HexaPDF
         # Encrypts the given +data+ with the +key+.
         #
         # See: PDF2.0 s7.6.3
-        def encrypt(key, data, &_block)
+        def encrypt(key, data)
           new(key).process(data)
         end
         alias decrypt encrypt
 
         # Returns a Fiber object that encrypts the data from the given source fiber with the
         # +key+.
-        def encryption_fiber(key, source, &_block)
+        def encryption_fiber(key, source)
           Fiber.new do
             algorithm = new(key)
             while source.alive? && (data = source.resume)

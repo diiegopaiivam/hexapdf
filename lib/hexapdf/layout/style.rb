@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -265,9 +265,7 @@ module HexaPDF
             miter_limit(10).
             line_cap_style(line_cap_style(:top))
 
-          if width.top > w || width.top > h
-            canvas.rectangle(x, y, w, h).clip_path.end_path
-          end
+          canvas.rectangle(x, y, w, h).clip_path.end_path
           if style.top == :solid
             canvas.line_dash_pattern(0).
               rectangle(x + offset, y + offset, w - 2 * offset, h - 2 * offset).stroke
@@ -395,7 +393,7 @@ module HexaPDF
       # The object resolved in this way needs to respond to #call(canvas, box) where +canvas+ is the
       # HexaPDF::Content::Canvas object on which it should be drawn and +box+ is a box-like object
       # (e.g. Box or TextFragment). The coordinate system is translated so that the origin is at the
-      # bottom-left corner of the box during the drawing operations.
+      # bottom left corner of the box during the drawing operations.
       class Layers
 
         # Creates a new Layers object popuplated with the given +layers+.
@@ -1256,11 +1254,7 @@ module HexaPDF
       #     doesn't. If a box doesn't support this value, it is positioned as if the value :default
       #     was set.
       #
-      #     Notes:
-      #
-      #     * The properties #align and #valign are not used with this value.
-      #     * The rectangular area of the box is the rectangle containing all the flowed content.
-      #       That rectangle is used for drawing the border, background and so on.
+      #     Note that the properties #align and #valign are not used with this value!
       #
       #     Examples:
       #
@@ -1270,8 +1264,8 @@ module HexaPDF
       #       composer.lorem_ipsum(position: :flow)
       #
       # [x, y]::
-      #     Position the box with the bottom-left corner at the given absolute position relative to
-      #     the bottom-left corner of the frame.
+      #     Position the box with the bottom left corner at the given absolute position relative to
+      #     the bottom left corner of the frame.
       #
       #     Examples:
       #
@@ -1371,8 +1365,8 @@ module HexaPDF
       #       composer.text('Text underneath')
       #
       # :fill_frame_horizontal::
-      #     The mask covers the box including the margin around the box, the space to the left and
-      #     right in the frame and the space to the top of the current region.
+      #     The mask covers the box including the margin around the box and the space to the left
+      #     and right in the frame.
       #
       #     Examples:
       #

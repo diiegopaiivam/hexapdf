@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -89,10 +89,6 @@ module HexaPDF
       define_field :StructParents, type: Integer,      version: '1.3'
       define_field :OPI,           type: Dictionary,   version: '1.2'
       define_field :OC,            type: Dictionary,   version: '1.5'
-      define_field :Name,          type: Symbol
-      define_field :AF,            type: PDFArray,     version: '2.0'
-      define_field :Measure,       type: Dictionary,   version: '2.0'
-      define_field :PtData,        type: Dictionary,   version: '2.0'
 
       # Returns the path to the PDF file that was used when creating the form object.
       #
@@ -135,7 +131,8 @@ module HexaPDF
 
       # Returns the resource dictionary which is automatically created if it doesn't exist.
       def resources
-        self[:Resources] ||= document.wrap({}, type: :XXResources)
+        self[:Resources] ||= document.wrap({ProcSet: [:PDF, :Text, :ImageB, :ImageC, :ImageI]},
+                                           type: :XXResources)
       end
 
       # Processes the content stream of the form XObject with the given processor object.
@@ -162,8 +159,8 @@ module HexaPDF
       # retained without the need for parsing its contents.
       #
       # If the bounding box of the form XObject doesn't have its origin at (0, 0), the canvas origin
-      # is translated into the bottom-left corner so that this detail doesn't matter when using the
-      # canvas. This means that the canvas' origin is always at the bottom-left corner of the
+      # is translated into the bottom left corner so that this detail doesn't matter when using the
+      # canvas. This means that the canvas' origin is always at the bottom left corner of the
       # bounding box.
       #
       # *Note* that a canvas can only be retrieved for initially empty form XObjects!

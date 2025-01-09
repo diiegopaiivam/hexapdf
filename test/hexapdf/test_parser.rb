@@ -11,7 +11,7 @@ describe HexaPDF::Parser do
     @document.config['parser.try_xref_reconstruction'] = false
     @document.add(@document.wrap(10, oid: 1, gen: 0))
 
-    create_parser(+<<~EOF)
+    create_parser(<<~EOF)
       %PDF-1.7
 
       1 0 obj
@@ -33,23 +33,18 @@ describe HexaPDF::Parser do
       endstream
       endobj
 
-      5 0 obj
-      1 0 R
-      endobj
-
       xref
       0 4
       0000000000 65535 f 
       0000000010 00000 n 
       0000000029 00000 n 
       0000000000 65535 f 
-      3 2
+      3 1
       0000000556 00000 n 
-      0000000308 00000 n
       trailer
       << /Test (now) >>
       startxref
-      330
+      308
       %%EOF
     EOF
   end
@@ -155,13 +150,6 @@ describe HexaPDF::Parser do
       obj, _, _, stream = @parser.parse_indirect_object
       assert_equal(2, obj[:Length])
       assert_equal('12', collector(stream.fiber))
-    end
-
-    it "recovers from a non-existing indirect reference to a stream length value" do
-      create_parser("1 0 obj<</Length 2 0 R>> stream\n12(ab\nendstream endobj")
-      obj, _, _, stream = @parser.parse_indirect_object
-      assert_equal(5, obj[:Length])
-      assert_equal('12(ab', collector(stream.fiber))
     end
 
     it "works even if the keyword endobj is missing or mangled" do
@@ -310,11 +298,6 @@ describe HexaPDF::Parser do
       assert_equal(0, obj.gen)
     end
 
-    it "handles the case of the value of an indirect object being an indirect reference" do
-      obj = @parser.load_object(HexaPDF::XRefSection.in_use_entry(5, 0, 308))
-      assert_equal(1, obj.oid)
-    end
-
     describe "with strict parsing" do
       it "raises an error if an indirect object has an offset of 0" do
         @document.config['parser.on_correctable_error'] = proc { true }
@@ -353,17 +336,17 @@ describe HexaPDF::Parser do
 
   describe "startxref_offset" do
     it "caches the offset value" do
-      assert_equal(330, @parser.startxref_offset)
-      @parser.instance_eval { @io.string = @io.string.sub(/330\n/, "309\n") }
-      assert_equal(330, @parser.startxref_offset)
+      assert_equal(308, @parser.startxref_offset)
+      @parser.instance_eval { @io }.string.sub!(/308\n/, "309\n")
+      assert_equal(308, @parser.startxref_offset)
     end
 
     it "returns the correct offset" do
-      assert_equal(330, @parser.startxref_offset)
+      assert_equal(308, @parser.startxref_offset)
     end
 
     it "ignores garbage at the end of the file" do
-      create_parser("startxref\n5\n%%EOF" + "\nhallo" * 150)
+      create_parser("startxref\n5\n%%EOF" << "\nhallo" * 150)
       assert_equal(5, @parser.startxref_offset)
     end
 
@@ -373,17 +356,9 @@ describe HexaPDF::Parser do
     end
 
     it "finds the startxref anywhere in file" do
-      create_parser("startxref\n5\n%%EOF" + "\nhallo" * 5000)
+      create_parser("startxref\n5\n%%EOF" << "\nhallo" * 5000)
       assert_equal(5, @parser.startxref_offset)
-    end
-
-    it "handles the case where %%EOF is the on the 1. line of the 1024 byte search block" do
-      create_parser("startxref\n5\n%%EOF\n" + "h" * 1018)
-      assert_equal(5, @parser.startxref_offset)
-    end
-
-    it "handles the case where %%EOF is the on the 2. line of the 1024 byte search block" do
-      create_parser("startxref\n5\n%%EOF\n" + "h" * 1017)
+      create_parser("startxref\n5\n%%EOF\n" << "h" * 1017)
       assert_equal(5, @parser.startxref_offset)
     end
 
@@ -421,7 +396,7 @@ describe HexaPDF::Parser do
 
     it "fails on strict parsing if the startxref is not in the last part of the file" do
       @document.config['parser.on_correctable_error'] = proc { true }
-      create_parser("startxref\n5\n%%EOF" + "\nhallo" * 5000)
+      create_parser("startxref\n5\n%%EOF" << "\nhallo" * 5000)
       exp = assert_raises(HexaPDF::MalformedPDFError) { @parser.startxref_offset }
       assert_match(/end-of-file marker not found/, exp.message)
     end
@@ -459,7 +434,7 @@ describe HexaPDF::Parser do
     end
 
     it "ignores junk at the beginning of the file and correctly calculates offset" do
-      create_parser("junk" * 200 + "\n%PDF-1.4\n")
+      create_parser("junk" * 200 << "\n%PDF-1.4\n")
       assert_equal('1.4', @parser.file_header_version)
       assert_equal(801, @parser.instance_variable_get(:@header_offset))
     end
@@ -670,13 +645,13 @@ describe HexaPDF::Parser do
     end
 
     it "handles cases where the line contains an invalid string that exceeds the read buffer" do
-      create_parser("(1" + "(abc" * 32188 + "\n1 0 obj\n6\nendobj\ntrailer\n<</Size 1>>")
+      create_parser("(1" << "(abc" * 32188 << "\n1 0 obj\n6\nendobj\ntrailer\n<</Size 1>>")
       assert_equal(6, @parser.load_object(@xref).value)
     end
 
     it "handles pathalogical cases which contain many opened literal strings" do
       time = Time.now
-      create_parser("(1" + "(abc\n" * 10000 + "\n1 0 obj\n6\nendobj\ntrailer\n<</Size 1>>")
+      create_parser("(1" << "(abc\n" * 10000 << "\n1 0 obj\n6\nendobj\ntrailer\n<</Size 1>>")
       assert_equal(6, @parser.load_object(@xref).value)
       assert(Time.now - time < 0.5, "Xref reconstruction takes too long")
     end

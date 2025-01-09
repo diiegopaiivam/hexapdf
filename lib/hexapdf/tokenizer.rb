@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -82,7 +82,6 @@ module HexaPDF
     # correctable situations are only raised if the return value of calling the object is +true+.
     def initialize(io, on_correctable_error: nil)
       @io = io
-      @io_chunk = String.new(''.b)
       @ss = StringScanner.new(''.b)
       @original_pos = -1
       @on_correctable_error = on_correctable_error || proc { false }
@@ -118,43 +117,42 @@ module HexaPDF
     def next_token
       prepare_string_scanner(20)
       prepare_string_scanner(20) while @ss.skip(WHITESPACE_MULTI_RE)
-      case (byte = @ss.scan_byte || -1)
-      when 43, 45, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57 # + - . 0..9
-        @ss.pos -= 1
+      byte = @ss.string.getbyte(@ss.pos) || -1
+      if (48 <= byte && byte <= 57) || byte == 45 || byte == 43 || byte == 46 # 0..9 - + .
         parse_number
-      when 47 # /
+      elsif byte == 47 # /
         parse_name
-      when 40 # (
+      elsif byte == 40 # (
         parse_literal_string
-      when 60 # <
-        if @ss.peek_byte == 60
-          @ss.pos += 1
+      elsif byte == 60 # <
+        if @ss.string.getbyte(@ss.pos + 1) == 60
+          @ss.pos += 2
           TOKEN_DICT_START
         else
           parse_hex_string
         end
-      when 62 # >
-        unless @ss.scan_byte == 62
-          raise HexaPDF::MalformedPDFError.new("Delimiter '>' found at invalid position", pos: pos - 1)
+      elsif byte == 62 # >
+        unless @ss.string.getbyte(@ss.pos + 1) == 62
+          raise HexaPDF::MalformedPDFError.new("Delimiter '>' found at invalid position", pos: pos)
         end
+        @ss.pos += 2
         TOKEN_DICT_END
-      when 91 # [
+      elsif byte == 91 # [
+        @ss.pos += 1
         TOKEN_ARRAY_START
-      when 93 # ]
+      elsif byte == 93 # ]
+        @ss.pos += 1
         TOKEN_ARRAY_END
-      when 41 # )
-        raise HexaPDF::MalformedPDFError.new("Delimiter ')' found at invalid position", pos: pos - 1)
-      when 123, 125 # { }
-        Token.new(byte.chr.b)
-      when 37 # %
+      elsif byte == 123 || byte == 125 # { }
+        Token.new(@ss.get_byte)
+      elsif byte == 37 # %
         until @ss.skip_until(/(?=[\r\n])/)
           return NO_MORE_TOKENS unless prepare_string_scanner
         end
         next_token
-      when -1 # we reached the end of the file
+      elsif byte == -1 # we reached the end of the file
         NO_MORE_TOKENS
       else # everything else consisting of regular characters
-        @ss.pos -= 1
         parse_keyword
       end
     end
@@ -208,13 +206,12 @@ module HexaPDF
     # Note: This is a special method meant for use with reconstructing the cross-reference table!
     def next_integer_or_keyword
       skip_whitespace
-      byte = @ss.peek_byte || -1
-      case byte
-      when 48, 49, 50, 51, 52, 53, 54, 55, 56, 57
+      byte = @ss.string.getbyte(@ss.pos) || -1
+      if 48 <= byte && byte <= 57
         parse_number
-      when 97..122, 65..90
+      elsif (97 <= byte && byte <= 122) || (65 <= byte && byte <= 90)
         parse_keyword
-      when -1 # we reached the end of the file
+      elsif byte == -1 # we reached the end of the file
         NO_MORE_TOKENS
       else
         nil
@@ -224,7 +221,8 @@ module HexaPDF
     # Reads the byte (an integer) at the current position and advances the scan pointer.
     def next_byte
       prepare_string_scanner(1)
-      @ss.scan_byte
+      @ss.pos += 1
+      @ss.string.getbyte(@ss.pos - 1)
     end
 
     # Reads the cross-reference subsection entry at the current position and advances the scan
@@ -282,28 +280,21 @@ module HexaPDF
     #
     # See: PDF2.0 s7.3.3
     def parse_number
-      prepare_string_scanner(40)
-      pos = self.pos
-      if (tmp = @ss.scan_integer)
-        if @ss.eos? || @ss.match?(WHITESPACE_OR_DELIMITER_RE)
-          # Handle object references, see PDF2.0 s7.3.10
-          prepare_string_scanner(10)
-          if @ss.scan(REFERENCE_RE)
-            tmp = if tmp > 0
-                    Reference.new(tmp, @ss[1].to_i)
-                  else
-                    maybe_raise("Invalid indirect object reference (#{tmp},#{@ss[1].to_i})")
-                    nil
-                  end
-          end
-          return tmp
-        else
-          self.pos = pos
-        end
-      end
-
       val = scan_until(WHITESPACE_OR_DELIMITER_RE) || @ss.scan(/.*/)
-      if val.match?(/\A[+-]?(?:\d+\.\d*|\.\d+)\z/)
+      if val.match?(/\A[+-]?\d++(?!\.)\z/)
+        tmp = val.to_i
+        # Handle object references, see PDF2.0 s7.3.10
+        prepare_string_scanner(10)
+        if @ss.scan(REFERENCE_RE)
+          tmp = if tmp > 0
+                  Reference.new(tmp, @ss[1].to_i)
+                else
+                  maybe_raise("Invalid indirect object reference (#{tmp},#{@ss[1].to_i})")
+                  nil
+                end
+        end
+        tmp
+      elsif val.match?(/\A[+-]?(?:\d+\.\d*|\.\d+)\z/)
         val << '0' if val.getbyte(-1) == 46 # dot '.'
         Float(val)
       else
@@ -326,6 +317,7 @@ module HexaPDF
     #
     # See: PDF2.0 s7.3.4.2
     def parse_literal_string
+      @ss.pos += 1
       str = "".b
       parentheses = 1
 
@@ -342,7 +334,7 @@ module HexaPDF
         when 40 then parentheses += 1 # (
         when 13 # \r
           str[-1] = "\n"
-          @ss.pos += 1 if @ss.peek_byte == 10 # \n
+          @ss.pos += 1 if @ss.peek(1) == "\n"
         when 92 # \\
           str.chop!
           prepare_string_scanner(3)
@@ -368,6 +360,7 @@ module HexaPDF
     #
     # See: PDF2.0 s7.3.4.3
     def parse_hex_string
+      @ss.pos += 1
       data = scan_until(/(?=>)/)
       unless data
         raise HexaPDF::MalformedPDFError.new("Unclosed hex string found", pos: pos)
@@ -382,6 +375,7 @@ module HexaPDF
     #
     # See: PDF2.0 s7.3.5
     def parse_name
+      @ss.pos += 1
       str = scan_until(WHITESPACE_OR_DELIMITER_RE) || @ss.scan(/.*/)
       str.gsub!(/#[A-Fa-f0-9]{2}/) {|m| m[1, 2].hex.chr }
       if str.force_encoding(Encoding::UTF_8).valid_encoding?
@@ -445,9 +439,9 @@ module HexaPDF
       @io.seek(@next_read_pos)
       return false if @io.eof?
 
-      @ss << @io.read(8192, @io_chunk)
+      @ss << @io.read(8192)
       if @ss.pos > 8192 && @ss.string.length > 16384
-        @ss.string.replace(@ss.string.byteslice(8192..-1))
+        @ss.string.slice!(0, 8192)
         @ss.pos -= 8192
         @original_pos += 8192
       end

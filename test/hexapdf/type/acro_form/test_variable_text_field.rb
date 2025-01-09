@@ -102,22 +102,9 @@ describe HexaPDF::Type::AcroForm::VariableTextField do
                    @field.parse_default_appearance_string)
     end
 
-    it "sets a standard /DA value if no other /DA is found" do
+    it "fails if no /DA value is set" do
       @doc.acro_form.delete(:DA)
-      assert_equal([:F1, 0, HexaPDF::Content::ColorSpace.prenormalized_device_color([0])],
-                   @field.parse_default_appearance_string)
-    end
-
-    it "converts the /DA to a string in case an invalid PDF uses a Symbol" do
-      @field[:DA] = :"1 g /F1 20 Tf"
-      assert_equal([:F1, 20, @color], @field.parse_default_appearance_string)
-    end
-
-    it "fails if no /DA value is set and no default appearance string should be set" do
-      @doc.acro_form.delete(:DA)
-      @doc.config['acro_form.fallback_default_appearance'] = nil
       assert_raises(HexaPDF::Error) { @field.parse_default_appearance_string }
     end
-
   end
 end

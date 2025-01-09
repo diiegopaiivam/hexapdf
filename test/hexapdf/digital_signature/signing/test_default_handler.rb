@@ -133,13 +133,6 @@ describe HexaPDF::DigitalSignature::Signing::DefaultHandler do
       assert_equal(['Reason', 'Location', 'Contact'], @obj.value.values_at(:Reason, :Location, :ContactInfo))
     end
 
-    it "sets the signing time" do
-      time = Time.now
-      @handler.signing_time = time
-      @handler.finalize_objects(@field, @obj)
-      assert_equal(time, @obj[:M])
-    end
-
     it "fills the build properties dictionary with appropriate application information" do
       @handler.finalize_objects(@field, @obj)
       assert_equal(:HexaPDF, @obj[:Prop_Build][:App][:Name])
@@ -155,12 +148,6 @@ describe HexaPDF::DigitalSignature::Signing::DefaultHandler do
       assert_equal(1, ref[:TransformParams][:P])
       assert_equal(:'1.2', ref[:TransformParams][:V])
       assert_same(@obj, @doc.catalog[:Perms][:DocMDP])
-    end
-
-    it "updates the document version if :pades signing is used" do
-      @handler.signature_type = :pades
-      @handler.finalize_objects(@field, @obj)
-      assert_equal('2.0', @doc.version)
     end
 
     it "fails if DocMDP should be set but there is already a signature" do

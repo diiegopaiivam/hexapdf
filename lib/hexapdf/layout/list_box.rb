@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -186,12 +186,20 @@ module HexaPDF
         super && (!@results || @results.all? {|result| result.box_fitter.fit_results.empty? })
       end
 
-      private
-
       # Fits the list box into the current region of the frame.
-      def fit_content(_available_width, _available_height, frame)
+      def fit(available_width, available_height, frame)
+        @width = if @initial_width > 0
+                   @initial_width
+                 else
+                   (style.position == :flow ? frame.width : available_width)
+                 end
+        height = if @initial_height > 0
+                   @initial_height - reserved_height
+                 else
+                   (style.position == :flow ? frame.y - frame.bottom : available_height) - reserved_height
+                 end
+
         width = @width - reserved_width
-        height = @height - reserved_height
         left = (style.position == :flow ? frame.left : frame.x) + reserved_width_left
         top = frame.y - reserved_height_top
 
@@ -235,7 +243,7 @@ module HexaPDF
           Array(child).each {|ibox| box_fitter.fit(ibox) }
           item_result.box_fitter = box_fitter
           item_result.height = [item_result.height.to_i, box_fitter.content_heights[0]].max
-          @results << item_result unless box_fitter.fit_results.empty?
+          @results << item_result
 
           top -= item_result.height + item_spacing
           height -= item_result.height + item_spacing
@@ -243,14 +251,16 @@ module HexaPDF
           break if !box_fitter.success? || height <= 0
         end
 
-        update_content_height { @results.sum(&:height) + (@results.count - 1) * item_spacing }
+        @height = @results.sum(&:height) + (@results.count - 1) * item_spacing + reserved_height
 
-        if @results.size == @children.size && @results.all? {|r| r.box_fitter.success? }
-          fit_result.success!
-        elsif !@results.empty? && !@results[0].box_fitter.fit_results.empty?
-          fit_result.overflow!
-        end
+        @draw_pos_x = frame.x + reserved_width_left
+        @draw_pos_y = frame.y - @height + reserved_height_bottom
+        @all_items_fitted = @results.all? {|r| r.box_fitter.success? } &&
+          @results.size == @children.size
+        @fit_successful = @all_items_fitted || (@initial_height > 0 && style.overflow == :truncate)
       end
+
+      private
 
       # Removes the +content_indentation+ from the left side of the given shape (a Geom2D::PolygonSet).
       def remove_indent_from_frame_shape(shape)
@@ -297,7 +307,7 @@ module HexaPDF
       end
 
       # Splits the content of the list box. This method is called from Box#split.
-      def split_content
+      def split_content(_available_width, _available_height, _frame)
         remaining_boxes = @results[-1].box_fitter.remaining_boxes
         first_is_split_box = !remaining_boxes.empty?
         children = (remaining_boxes.empty? ? [] : [remaining_boxes]) + @children[@results.size..-1]
@@ -316,39 +326,52 @@ module HexaPDF
       def item_marker_box(document, index)
         return @marker_type.call(document, self, index) if @marker_type.kind_of?(Proc)
 
-        unless (items = @item_marker_items)
+        unless (fragment = @item_marker_fragment)
           marker_style = {
-            font_size: style.font_size || 10,
-            fill_color: style.fill_color,
+            font: style.font? ? style.font : document.fonts.add("Times"),
+            font_size: style.font_size || 10, fill_color: style.fill_color
           }
-          marker_style[:font] = style.font if style.font?
-          items = case @marker_type
-                  when :disc
-                    document.layout.text_fragments("•", style: marker_style)
-                  when :circle
-                    document.layout.text_fragments("❍", style: marker_style,
-                                                   font_size: style.font_size / 2.0,
-                                                   text_rise: -style.font_size / 1.8)
-                  when :square
-                    document.layout.text_fragments("■", style: marker_style,
-                                                   font_size: style.font_size / 2.0,
-                                                   text_rise: -style.font_size / 1.8)
-                  when :decimal
-                    text = (@start_number + index).to_s << "."
-                    document.layout.text_fragments(text, style: marker_style)
-                  else
-                    raise HexaPDF::Error, "Unknown list marker type #{@marker_type.inspect}"
-                  end
-          @item_marker_items = items unless @marker_type == :decimal
+          fragment = case @marker_type
+                     when :disc
+                       TextFragment.create("•", marker_style)
+                     when :circle
+                       unless marker_style[:font].decode_codepoint("❍".ord).valid?
+                         marker_style[:font] = document.fonts.add("ZapfDingbats")
+                       end
+                       TextFragment.create("❍", **marker_style,
+                                           font_size: style.font_size / 2.0,
+                                           text_rise: -style.font_size / 1.8)
+                     when :square
+                       unless marker_style[:font].decode_codepoint("■".ord).valid?
+                         marker_style[:font] = document.fonts.add("ZapfDingbats")
+                       end
+                       TextFragment.create("■", **marker_style,
+                                           font_size: style.font_size / 2.0,
+                                           text_rise: -style.font_size / 1.8)
+                     when :decimal
+                       text = (@start_number + index).to_s << "."
+                       TextFragment.create(text, marker_style)
+                     else
+                       raise HexaPDF::Error, "Unknown list marker type #{@marker_type.inspect}"
+                     end
+          @item_marker_fragment = fragment unless @marker_type == :decimal
         end
-        TextBox.new(items: items, style: {text_align: :right, padding: [0, 5, 0, 0]})
+        TextBox.new(items: [fragment], style: {text_align: :right, padding: [0, 5, 0, 0]})
       end
 
       # Draws the list items onto the canvas at position [x, y].
       def draw_content(canvas, x, y)
-        translate = style.position != :flow && (x != @fit_x || y != @fit_y)
+        if !@all_items_fitted && (@initial_height > 0 && style.overflow == :error)
+          raise HexaPDF::Error, "Some items don't fit into box with limited height and " \
+            "style property overflow is set to :error"
+        end
 
-        canvas.save_graphics_state.translate(x - @fit_x, y - @fit_y) if translate
+        translate = style.position != :flow && (x != @draw_pos_x || y != @draw_pos_y)
+
+        if translate
+          canvas.save_graphics_state
+          canvas.translate(x - @draw_pos_x, y - @draw_pos_y)
+        end
 
         @results.each do |item_result|
           box_fitter = item_result.box_fitter

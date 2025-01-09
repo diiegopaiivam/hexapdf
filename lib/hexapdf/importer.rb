@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -71,18 +71,14 @@ module HexaPDF
     # Imports the given +object+ (belonging to the +source+ document) by completely copying it and
     # all referenced objects into the +destination+ object.
     #
-    # If the +allow_all+ argument is set to +true+, then the usually omitted catalog and page tree
-    # node objects (see the class description for details) are also copied which allows one to make
-    # an in-memory duplicate of a HexaPDF::Document object.
-    #
     # Specifying +source+ is optionial if it can be determined through +object+.
     #
     # After the operation is finished, all state is discarded. This means that another call to this
     # method for the same object will yield a new - and different - object. This is in contrast to
     # using ::for together with #import which remembers and returns already imported objects (which
     # is generally what one wants).
-    def self.copy(destination, object, allow_all: false, source: nil)
-      new(NullableWeakRef.new(destination), allow_all: allow_all).import(object, source: source)
+    def self.copy(destination, object, source: nil)
+      new(NullableWeakRef.new(destination)).import(object, source: source)
     end
 
     private_class_method :new
@@ -90,10 +86,9 @@ module HexaPDF
     attr_reader :destination #:nodoc:
 
     # Initializes a new importer that can import objects to the +destination+ document.
-    def initialize(destination, allow_all: false)
+    def initialize(destination)
       @destination = destination
       @mapper = {}
-      @allow_all = allow_all
     end
 
     SourceWrapper = Struct.new(:source) #:nodoc:
@@ -141,7 +136,7 @@ module HexaPDF
         internal_import(wrapper.source.object(object), wrapper)
       when HexaPDF::Object
         wrapper.source ||= object.document
-        if object.null? || (!@allow_all && (object.type == :Catalog || object.type == :Pages))
+        if object.type == :Catalog || object.type == :Pages
           @mapper[object.data] = nil
         elsif (mapped_object = @mapper[object.data]&.__getobj__) && !mapped_object.null?
           mapped_object
@@ -154,12 +149,7 @@ module HexaPDF
           obj.data.gen = 0
           @destination.add(obj) if object.indirect?
 
-          stream = obj.data.stream
-          if stream.kind_of?(String)
-            obj.data.stream = stream.dup
-          elsif stream&.source.kind_of?(FiberDoubleForString)
-            obj.data.stream = stream.fiber.resume.dup
-          end
+          obj.data.stream = obj.data.stream.dup if obj.data.stream.kind_of?(String)
           obj.data.value = duplicate(obj.data.value, wrapper)
           obj.data.value.update(duplicate(object.copy_inherited_values, wrapper)) if object.type == :Page
           obj

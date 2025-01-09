@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -64,21 +64,8 @@ module HexaPDF
     rescue StandardError => e
       $stderr.puts "Problem encountered: #{e.message}"
       unless e.kind_of?(HexaPDF::Error)
-        $stderr.puts "Backtrace (last 10 lines):"
-        $stderr.puts e.backtrace[0, 10]
-        $stderr.puts
         $stderr.puts "--> The problem might indicate a faulty PDF or a bug in HexaPDF."
-        $stderr.puts "--> Please report this at"
-        $stderr.puts "-->"
-        $stderr.puts "-->     https://github.com/gettalong/hexapdf/issues"
-        $stderr.puts "-->"
-        $stderr.puts "--> and include the information above as well as the output of running"
-        $stderr.puts "--> the following command on the input PDF:"
-        $stderr.puts "-->"
-        $stderr.puts "-->     hexapdf info --check INPUT.PDF"
-        $stderr.puts "-->"
-        $stderr.puts "--> If possible, please also provide the input PDF."
-        $stderr.puts "--> Thanks!"
+        $stderr.puts "--> Please report this at https://github.com/gettalong/hexapdf/issues - thanks!"
       end
       exit(1)
     end

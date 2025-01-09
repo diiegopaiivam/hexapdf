@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -211,7 +211,7 @@ module HexaPDF
         data = ''.b
         self[:ByteRange]&.each_slice(2) do |offset, length|
           io.pos = offset
-          data << io.read(length).to_s
+          data << io.read(length)
         end
         data
       end

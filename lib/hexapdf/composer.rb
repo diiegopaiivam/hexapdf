@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -231,13 +231,6 @@ module HexaPDF
       @document.write(output, optimize: optimize, **options)
     end
 
-    # Writes the created PDF document to a string and returns that string.
-    #
-    # See HexaPDF::Document#write for details.
-    def write_to_string(optimize: true, **options)
-      @document.write_to_string(optimize: optimize, **options)
-    end
-
     # :call-seq:
     #    composer.style(name)                              -> style
     #    composer.style(name, base: :base, **properties)   -> style
@@ -259,28 +252,6 @@ module HexaPDF
     # See: HexaPDF::Layout::Style
     def style(name, base: :base, **properties)
       @document.layout.style(name, base: base, **properties)
-    end
-
-    # :call-seq:
-    #    composer.styles              -> styles
-    #    composer.styles(**mapping)   -> styles
-    #
-    # Creates multiple named styles at once if +mapping+ is provided, and returns the style mapping.
-    #
-    # See HexaPDF::Document::Layout#styles for details; this method is just a thin wrapper around
-    # that method.
-    #
-    # Example:
-    #
-    #   composer.styles(
-    #     base: {font_size: 12, leading: 1.2},
-    #     header: {font: 'Helvetica', fill_color: "008"},
-    #     header1: {base: :header, font_size: 30}
-    #   )
-    #
-    # See: HexaPDF::Layout::Style
-    def styles(**mapping)
-      @document.layout.styles(**mapping)
     end
 
     # :call-seq:
@@ -454,10 +425,9 @@ module HexaPDF
           if draw_box
             @frame.draw(@canvas, result)
             drawn_on_page = true
-            (box = draw_box; break) unless box
           elsif !@frame.find_next_region
             unless drawn_on_page
-              raise HexaPDF::Error, "Box didn't fit multiple times, even on empty page"
+              raise HexaPDF::Error, "Box doesn't fit on empty page"
             end
             new_page
             drawn_on_page = false

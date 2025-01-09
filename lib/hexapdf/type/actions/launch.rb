@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -60,17 +60,13 @@ module HexaPDF
         define_field :S,         type: Symbol, required: true, default: :Launch
         define_field :F,         type: :Filespec
         define_field :Win,       type: :XXLaunchActionWinParameters
-        define_field :Mac,       type: ::Object, version: '2.0'
-        define_field :Unix,      type: ::Object, version: '2.0'
         define_field :NewWindow, type: Boolean, version: '1.2'
 
         private
 
         def perform_validation #:nodoc:
           super
-          unless key?(:Win) || key?(:Mac) || key?(:Unix) || key?(:F)
-            yield("Launch action key /F required if /Win, /Mac and /Unix are absent")
-          end
+          yield("A Launch action needs a target") unless key?(:F) || key?(:Win)
         end
 
       end

@@ -194,8 +194,6 @@ describe HexaPDF::Type::Annotations::Widget do
 
       it "returns the default size if none is set" do
         assert_equal(0, @widget.marker_style.size)
-        @widget.form_field[:DA] = "0.0 g"
-        assert_equal(0, @widget.marker_style.size)
       end
 
       it "sets the given size" do
@@ -213,8 +211,6 @@ describe HexaPDF::Type::Annotations::Widget do
       end
 
       it "returns the default color if none is set" do
-        assert_equal([0], @widget.marker_style.color.components)
-        @widget.form_field[:DA] = "/ZaDb 10 Tfg"
         assert_equal([0], @widget.marker_style.color.components)
       end
 

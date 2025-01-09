@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -76,7 +76,7 @@ module HexaPDF
       define_field :AS,        type: PDFArray
       define_field :Order,     type: PDFArray
       define_field :ListMode,  type: Symbol, default: :AllPages,
-                   allowed_values: [:AllPages, :VisiblePages]
+        allowed_values: [:AllPages, :VisiblePages]
       define_field :RBGroups,  type: PDFArray
       define_field :Locked,    type: PDFArray, default: []
 

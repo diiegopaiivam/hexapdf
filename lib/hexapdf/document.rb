@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -43,8 +43,6 @@ require 'hexapdf/reference'
 require 'hexapdf/object'
 require 'hexapdf/pdf_array'
 require 'hexapdf/stream'
-require 'hexapdf/name_tree_node'
-require 'hexapdf/number_tree_node'
 require 'hexapdf/revisions'
 require 'hexapdf/type'
 require 'hexapdf/task'
@@ -280,9 +278,8 @@ module HexaPDF
     # If the same argument is provided in multiple invocations, the import is done only once and
     # the previously imported object is returned.
     #
-    # Note: If you first create a PDF document from scratch or if you modify an existing document,
-    # and then want to import objects from it into another PDF document, you need to run the
-    # following on the source document:
+    # Note: If you first create a PDF document from scratch and then want to import objects from it
+    # into another PDF document, you need to run the following on the source document:
     #
     #   doc.dispatch_message(:complete_objects)
     #   doc.validate
@@ -704,34 +701,11 @@ module HexaPDF
       result
     end
 
-    # Returns an in-memory copy of the PDF document.
-    #
-    # In the context of this method this means that the returned PDF document contains the same PDF
-    # object tree as this document, starting at the trailer. A possibly set encryption is not
-    # transferred to the returned document.
-    #
-    # Note: If this PDF document was created from scratch or if it is an existing document that was
-    # modified, the following commands need to be run on this document beforehand:
-    #
-    #   doc.dispatch_message(:complete_objects)
-    #   doc.validate
-    #
-    # This ensures that all the necessary PDF structures set-up correctly.
-    def duplicate
-      dest = HexaPDF::Document.new
-      dupped_trailer = HexaPDF::Importer.copy(dest, trailer, allow_all: true)
-      dest.revisions.current.trailer.value.replace(dupped_trailer.value)
-      dest.trailer.delete(:Encrypt)
-      dest
-    end
-
     # :call-seq:
-    #   doc.write(filename, incremental: false, validate: true, update_fields: true, optimize: false) -> [start_xref, section]
-    #   doc.write(io, incremental: false, validate: true, update_fields: true, optimize: false) -> [start_xref, section]
+    #   doc.write(filename, incremental: false, validate: true, update_fields: true, optimize: false)
+    #   doc.write(io, incremental: false, validate: true, update_fields: true, optimize: false)
     #
-    # Writes the document to the given file (in case +io+ is a String) or IO stream. Returns the
-    # file position of the start of the last cross-reference section and the last XRefSection object
-    # written.
+    # Writes the document to the given file (in case +io+ is a String) or IO stream.
     #
     # Before the document is written, it is validated using #validate and an error is raised if the
     # document is not valid. However, this step can be skipped if needed.
@@ -786,15 +760,6 @@ module HexaPDF
       else
         Writer.write(self, file_or_io, incremental: incremental)
       end
-    end
-
-    # Writes the document to a string and returns the string.
-    #
-    # See #write for further information and details on the available arguments.
-    def write_to_string(**args)
-      io = StringIO.new(''.b)
-      write(io)
-      io.string
     end
 
     def inspect #:nodoc:

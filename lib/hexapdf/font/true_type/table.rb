@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -63,12 +63,7 @@ module HexaPDF
 
         # Calculates the checksum for the given data.
         def self.calculate_checksum(data)
-          checksum = 0
-          if (remainder_length = data.length % 4) != 0
-            checksum = (data[-remainder_length, remainder_length] << "\0" * (4 - remainder_length)).
-              unpack1('N')
-          end
-          checksum + data.unpack('N*').inject(0) {|sum, long| sum + long } % 2**32
+          data.unpack('N*').inject(0) {|sum, long| sum + long } % 2**32
         end
 
         # The TrueType font object associated with this table.

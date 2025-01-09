@@ -358,12 +358,6 @@ describe HexaPDF::Type::Page do
       page[:Contents] = [@doc.wrap({}, stream: 'q 10'), @doc.wrap({}, stream: 'w Q')]
       assert_equal('q 10 w Q', page.contents)
     end
-
-    it "handles null objects in the /Contents array" do
-      page = @doc.pages.add
-      page[:Contents] = [@doc.wrap({}, stream: 'q 10'), nil]
-      assert_equal('q 10 ', page.contents)
-    end
   end
 
   describe "contents=" do
@@ -395,7 +389,7 @@ describe HexaPDF::Type::Page do
       page = @doc.add({Type: :Page, Parent: @doc.pages.root})
       resources = page.resources
       assert_equal(:XXResources, resources.type)
-      assert_equal({}, resources.value)
+      assert_equal({ProcSet: [:PDF, :Text, :ImageB, :ImageC, :ImageI]}, resources.value)
     end
 
     it "returns the already used resource dictionary" do

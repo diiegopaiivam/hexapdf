@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -42,46 +42,7 @@ module HexaPDF
     # A TextBox is used for drawing text, either inside a rectangular box or by flowing it around
     # objects of a Frame.
     #
-    # The standard usage is through the helper methods Document::Layout#text and
-    # Document::Layout#formatted_text.
-    #
     # This class uses TextLayouter behind the scenes to do the hard work.
-    #
-    # == Used Box Properties
-    #
-    # The spacing after the last line can be controlled via the style property +last_line_gap+. Also
-    # see TextLayouter#style for other style properties taken into account.
-    #
-    # == Limitations
-    #
-    # When setting the style property 'position' to +:flow+, padding and border to the left and
-    # right as well as a predefined fixed width are not respected and the result will look wrong.
-    #
-    # == Examples
-    #
-    # Showing some text:
-    #
-    #   #>pdf-composer
-    #   composer.box(:text, items: layout.text_fragments("This is some text."))
-    #   # Or easier with the provided convenience method
-    #   composer.text("This is also some text")
-    #
-    # It is possible to flow the text around other objects by using the style property
-    # 'position' with the value +:flow+:
-    #
-    #   #>pdf-composer
-    #   composer.box(:base, width: 30, height: 30,
-    #                style: {margin: 5, position: :float, background_color: "hp-blue-light"})
-    #   composer.text("This is some text. " * 20, position: :flow)
-    #
-    # While top and bottom padding and border can be used with flow positioning, left and right
-    # padding and border are not supported and the result will look wrong:
-    #
-    #   #>pdf-composer
-    #   composer.box(:base, width: 30, height: 30,
-    #                style: {margin: 5, position: :float, background_color: "hp-blue-light"})
-    #   composer.text("This is some text. " * 20, padding: 10, position: :flow,
-    #                 text_align: :justify)
     class TextBox < Box
 
       # Creates a new TextBox object with the given inline items (e.g. TextFragment and InlineBox
@@ -106,6 +67,78 @@ module HexaPDF
         true
       end
 
+      # Fits the text box into the Frame.
+      #
+      # Depending on the 'position' style property, the text is either fit into the current region
+      # of the frame using +available_width+ and +available_height+, or fit to the shape of the
+      # frame starting from the top (when 'position' is set to :flow).
+      #
+      # The spacing after the last line can be controlled via the style property +last_line_gap+.
+      #
+      # Also see TextLayouter#style for other style properties taken into account.
+      def fit(available_width, available_height, frame)
+        return false if (@initial_width > 0 && @initial_width > available_width) ||
+          (@initial_height > 0 && @initial_height > available_height)
+
+        frame = frame.child_frame(box: self)
+        @width = @x_offset = @height = 0
+        @result = if style.position == :flow
+                    @tl.fit(@items, frame.width_specification, frame.shape.bbox.height,
+                            apply_first_text_indent: !split_box?, frame: frame)
+                  else
+                    @width = reserved_width
+                    @height = reserved_height
+                    width = (@initial_width > 0 ? @initial_width : available_width) - @width
+                    height = (@initial_height > 0 ? @initial_height : available_height) - @height
+                    @tl.fit(@items, width, height, apply_first_text_indent: !split_box?, frame: frame)
+                  end
+        @width += if @initial_width > 0 || style.text_align == :center || style.text_align == :right
+                    width
+                  elsif style.position == :flow
+                    min_x = +Float::INFINITY
+                    max_x = -Float::INFINITY
+                    @result.lines.each do |line|
+                      min_x = [min_x, line.x_offset].min
+                      max_x = [max_x, line.x_offset + line.width].max
+                    end
+                    min_x.finite? ? (@x_offset = min_x; max_x - min_x) : 0
+                  else
+                    @result.lines.max_by(&:width)&.width || 0
+                  end
+        @height += if @initial_height > 0 || style.text_valign == :center || style.text_valign == :bottom
+                     height
+                   else
+                     @result.height
+                   end
+        if style.last_line_gap && @result.lines.last
+          @height += style.line_spacing.gap(@result.lines.last, @result.lines.last)
+        end
+
+        @result.status == :success ||
+          (@result.status == :height && @initial_height > 0 && style.overflow == :truncate)
+      end
+
+      # Splits the text box into two boxes if necessary and possible.
+      def split(available_width, available_height, frame)
+        fit(available_width, available_height, frame) unless @result
+
+        if style.position != :flow && (float_compare(@width, available_width) > 0 ||
+                                       float_compare(@height, available_height) > 0)
+          [nil, self]
+        elsif @result.remaining_items.empty?
+          [self]
+        elsif @result.lines.empty?
+          [nil, self]
+        else
+          [self, create_box_for_remaining_items]
+        end
+      end
+
+      # :nodoc:
+      def draw(canvas, x, y)
+        super(canvas, x + @x_offset, y)
+      end
+
       # :nodoc:
       def empty?
         super && (!@result || @result.lines.empty?)
@@ -113,57 +146,15 @@ module HexaPDF
 
       private
 
-      # Fits the text box into the Frame.
-      #
-      # Depending on the 'position' style property, the text is either fit into the current region
-      # of the frame using +available_width+ and +available_height+, or fit to the shape of the
-      # frame starting from the top (when 'position' is set to :flow).
-      def fit_content(_available_width, _available_height, frame)
-        frame = frame.child_frame(box: self)
-        @x_offset = 0
-
-        if style.position == :flow
-          height = (@initial_height > 0 ? @initial_height : frame.shape.bbox.height) - reserved_height
-          @result = @tl.fit(@items, frame.width_specification(reserved_height_top), height,
-                            apply_first_text_indent: !split_box?, frame: frame)
-          min_x = +Float::INFINITY
-          max_x = -Float::INFINITY
-          @result.lines.each do |line|
-            min_x = [min_x, line.x_offset].min
-            max_x = [max_x, line.x_offset + line.width].max
-          end
-          @width = (min_x.finite? ? max_x - min_x : 0) + reserved_width
-          fit_result.x = @x_offset = min_x
-          @height = @initial_height > 0 ? @initial_height : @result.height + reserved_height
-        else
-          @result = @tl.fit(@items, @width - reserved_width, @height - reserved_height,
-                            apply_first_text_indent: !split_box?, frame: frame)
-          if style.text_align == :left && @initial_width == 0
-            @width = (@result.lines.max_by(&:width)&.width || 0) + reserved_width
-          end
-          if style.text_valign == :top && @initial_height == 0
-            @height = @result.height + reserved_height
-          end
-        end
-
-        if style.last_line_gap && @result.lines.last && @initial_height == 0
-          @height += style.line_spacing.gap(@result.lines.last, @result.lines.last)
-        end
-
-        if @result.status == :success
-          fit_result.success!
-        elsif @result.status == :height && !@result.lines.empty?
-          fit_result.overflow!
-        end
-      end
-
-      # Splits the text box into two.
-      def split_content
-        [self, create_box_for_remaining_items]
-      end
-
       # Draws the text into the box.
       def draw_content(canvas, x, y)
+        return unless @result
+
+        if @result.status == :height && @initial_height > 0 && style.overflow == :error
+          raise HexaPDF::Error, "Text doesn't fit into box with limited height and " \
+            "style property overflow is set to :error"
+        end
+
         return if @result.lines.empty?
         @result.draw(canvas, x - @x_offset, y + content_height)
       end

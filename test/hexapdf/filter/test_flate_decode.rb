@@ -8,10 +8,11 @@ describe HexaPDF::Filter::FlateDecode do
 
   before do
     @obj = HexaPDF::Filter::FlateDecode
-    @all_test_cases = [["abcdefg".b, "x\xDAKLJNIMK\a\x00\n\xDB\x02\xBD".b]]
+    @all_test_cases = [["abcdefg".force_encoding(Encoding::BINARY),
+                        "x\xDAKLJNIMK\a\x00\n\xDB\x02\xBD".force_encoding(Encoding::BINARY)]]
     @decoded = @all_test_cases[0][0]
     @encoded = @all_test_cases[0][1]
-    @encoded_predictor = "x\xDAcJdbD@\x00\x05\x8F\x00v".b
+    @encoded_predictor = "x\xDAcJdbD@\x00\x05\x8F\x00v".force_encoding(Encoding::BINARY)
     @predictor_opts = {Predictor: 12}
   end
 

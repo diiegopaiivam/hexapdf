@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -48,8 +48,8 @@ module HexaPDF
       define_type :XXMarkInformation
 
       define_field :Marked,         type: Boolean, default: false
-      define_field :UserProperties, type: Boolean, default: false, version: '1.6'
-      define_field :Suspects,       type: Boolean, default: false, version: '1.6'
+      define_field :UserProperties, type: Boolean, default: false
+      define_field :Suspects,       type: Boolean, default: false
 
     end
 

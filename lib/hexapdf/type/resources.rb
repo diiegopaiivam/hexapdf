@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -49,13 +49,13 @@ module HexaPDF
 
       define_type :XXResources
 
-      define_field :ExtGState,  type: Dictionary
+      define_field :ExtGState, type: Dictionary
       define_field :ColorSpace, type: Dictionary
-      define_field :Pattern,    type: Dictionary
-      define_field :Shading,    type: Dictionary, version: '1.3'
-      define_field :XObject,    type: Dictionary
-      define_field :Font,       type: Dictionary
-      define_field :ProcSet,    type: PDFArray
+      define_field :Pattern, type: Dictionary
+      define_field :Shading, type: Dictionary, version: '1.3'
+      define_field :XObject, type: Dictionary
+      define_field :Font, type: Dictionary
+      define_field :ProcSet, type: PDFArray
       define_field :Properties, type: Dictionary, version: '1.2'
 
       # Returns the color space stored under the given name.
@@ -217,17 +217,13 @@ module HexaPDF
 
       # Ensures that a valid procedure set is available.
       def perform_validation
-        val = self[:ProcSet]
+        super
+        return unless (val = self[:ProcSet])
 
         if val.kind_of?(Symbol)
           yield("Procedure set is a single value instead of an Array", true)
           val = value[:ProcSet] = [val]
         end
-
-        super
-
-        return unless val
-
         val.reject! do |name|
           case name
           when :PDF, :Text, :ImageB, :ImageC, :ImageI

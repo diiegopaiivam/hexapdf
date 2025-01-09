@@ -14,14 +14,10 @@ describe HexaPDF::Type::Actions::Launch do
     it "needs a launch target" do
       refute(@action.validate)
 
-      @action.value = {Win: {F: "test.exe"}}
-      assert(@action.validate)
-      @action.value = {Mac: 'test'}
-      assert(@action.validate)
-      @action.value = {Unix: 'test'}
+      @action.value = {F: {}}
       assert(@action.validate)
 
-      @action.value = {F: {}}
+      @action.value = {Win: {F: "test.exe"}}
       assert(@action.validate)
     end
   end

@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -59,11 +59,7 @@ module HexaPDF
 
       # Returns the time of signing.
       def signing_time
-        if embedded_tsa_signature
-          embedded_tsa_signature.signers.first.signed_time
-        else
-          signer_info.signed_time rescue super
-        end
+        signer_info.signed_time rescue super
       end
 
       # Returns the certificate chain.
@@ -80,23 +76,6 @@ module HexaPDF
       # Returns the signer information object (an instance of OpenSSL::PKCS7::SignerInfo).
       def signer_info
         @pkcs7.signers.first
-      end
-
-      # Returns the OpenSSL::PKCS7 object for the embedded TSA signature if there is one or +nil+
-      # otherwise.
-      def embedded_tsa_signature
-        return @embedded_tsa_signature if defined?(@embedded_tsa_signature)
-
-        @embedded_tsa_signature = nil
-        p7 = OpenSSL::ASN1.decode(signature_dict.contents.sub(/\x00*\z/, ''))
-        signed_data = p7.value[1].value[0]
-        signer_info = signed_data.value[-1].value[0] # first (and only) signer info
-        return unless signer_info.value[-1].tag == 1 # check for unsigned attributes
-        timestamp_token = signer_info.value[-1].value.find do |unsigned_attr|
-          unsigned_attr.value[0].value == "id-smime-aa-timeStampToken"
-        end
-        return unless timestamp_token
-        @embedded_tsa_signature = OpenSSL::PKCS7.new(timestamp_token.value[1].value[0])
       end
 
       # Verifies the signature using the provided OpenSSL::X509::Store object.
@@ -122,16 +101,9 @@ module HexaPDF
           return result
         end
 
-        if embedded_tsa_signature
-          result.log(:info, 'Signing time comes from timestamp authority')
-        end
-
         key_usage = signer_certificate.extensions.find {|ext| ext.oid == 'keyUsage' }
-        key_usage = key_usage&.value&.split(', ')
-        if key_usage&.include?("Non Repudiation") && !key_usage.include?("Digital Signature")
-          result.log(:info, 'Certificate used for non-repudiation')
-        elsif !key_usage || !key_usage.include?("Digital Signature")
-          result.log(:error, "Certificate key usage is missing 'Digital Signature' or 'Non Repudiation'")
+        unless key_usage && key_usage.value.split(', ').include?("Digital Signature")
+          result.log(:error, "Certificate key usage is missing 'Digital Signature'")
         end
 
         if signature_dict.signature_type == 'ETSI.RFC3161'
@@ -154,19 +126,6 @@ module HexaPDF
         else
           result.log(:error, "Signature verification failed")
         end
-
-        certs = [signer_certificate]
-        cur_cert = certs.first
-        while true
-          cur_cert = certificate_chain.find {|cert| cert.subject == cur_cert.issuer }
-          if cur_cert && !certs.include?(cur_cert)
-            certs << cur_cert
-          else
-            break
-          end
-        end
-        cert_subjects = certs.map {|cert| cert.subject.to_a.assoc("CN")&.[](1) }
-        result.log(:info, "Certificate chain: #{cert_subjects.join(" -> ")}")
 
         result
       end

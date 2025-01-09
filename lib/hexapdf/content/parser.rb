@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -84,43 +84,44 @@ module HexaPDF
       # See: HexaPDF::Tokenizer#next_token
       def next_token
         @ss.skip(WHITESPACE_MULTI_RE)
-        case (byte = @ss.scan_byte || -1)
-        when 43, 45, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57 # + - . 0..9
-          @ss.pos -= 1
+        byte = @string.getbyte(@ss.pos) || -1
+        if (48 <= byte && byte <= 57) || byte == 45 || byte == 43 || byte == 46 # 0..9 - +  .
           parse_number
-        when 47 # /
+        elsif (65 <= byte && byte <= 90) || (96 <= byte && byte <= 121)
+          parse_keyword
+        elsif byte == 47 # /
           parse_name
-        when 40 # (
+        elsif byte == 40 # (
           parse_literal_string
-        when 60 # <
-          if @ss.peek_byte == 60
-            @ss.pos += 1
+        elsif byte == 60 # <
+          if @string.getbyte(@ss.pos + 1) == 60
+            @ss.pos += 2
             TOKEN_DICT_START
           else
             parse_hex_string
           end
-        when 62 # >
-          unless @ss.scan_byte == 62
-            raise HexaPDF::MalformedPDFError.new("Delimiter '>' found at invalid position", pos: pos - 1)
+        elsif byte == 62 # >
+          unless @string.getbyte(@ss.pos + 1) == 62
+            raise HexaPDF::MalformedPDFError.new("Delimiter '>' found at invalid position", pos: pos)
           end
+          @ss.pos += 2
           TOKEN_DICT_END
-        when 91 # [
+        elsif byte == 91 # [
+          @ss.pos += 1
           TOKEN_ARRAY_START
-        when 93 # ]
+        elsif byte == 93 # ]
+          @ss.pos += 1
           TOKEN_ARRAY_END
-        when 41 # )
-          raise HexaPDF::MalformedPDFError.new("Delimiter ')' found at invalid position", pos: pos - 1)
-        when 123, 125 # { } )
-          Token.new(byte.chr.b)
-        when 37 # %
+        elsif byte == 123 || byte == 125 # { }
+          Token.new(@ss.get_byte)
+        elsif byte == 37 # %
           unless @ss.skip_until(/(?=[\r\n])/)
             (@raise_on_eos ? (raise StopIteration) : (return NO_MORE_TOKENS))
           end
           next_token
-        when -1
+        elsif byte == -1
           @raise_on_eos ? raise(StopIteration) : NO_MORE_TOKENS
         else
-          @ss.pos -= 1
           parse_keyword
         end
       end
@@ -132,7 +133,7 @@ module HexaPDF
         if (val = @ss.scan(/[+-]?(?:\d+\.\d*|\.\d+)/))
           val << '0' if val.getbyte(-1) == 46 # dot '.'
           Float(val)
-        elsif (val = @ss.scan_integer)
+        elsif (val = @ss.scan(/[+-]?\d++/))
           val.to_i
         else
           parse_keyword

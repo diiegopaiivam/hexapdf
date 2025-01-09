@@ -31,7 +31,7 @@ describe HexaPDF::Type::FontType1::StandardFonts do
     end
 
     it "returns nil if the given name doesn't belong to a standard font" do
-      assert_nil(@obj.font(:SomeOtherFont))
+      refute_nil(@obj.font(:TimesNewRoman))
     end
   end
 end
@@ -137,11 +137,6 @@ describe HexaPDF::Type::FontType1 do
       assert(@embedded_font.validate)
       @embedded_font.delete(:FontDescriptor)
       refute(@embedded_font.validate)
-    end
-
-    it "ensures a correct Symbol value for the /Encoding key" do
-      @font[:Encoding] = :Other
-      refute(@font.validate)
     end
   end
 end

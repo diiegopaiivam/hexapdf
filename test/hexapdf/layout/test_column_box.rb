@@ -22,7 +22,7 @@ describe HexaPDF::Layout::ColumnBox do
   end
 
   def check_box(box, width, height, fit_pos = nil)
-    assert(box.fit(@frame.available_width, @frame.available_height, @frame).success?, "box didn't fit")
+    assert(box.fit(@frame.available_width, @frame.available_height, @frame), "box didn't fit")
     assert_equal(width, box.width, "box width")
     assert_equal(height, box.height, "box height")
     if fit_pos
@@ -73,6 +73,9 @@ describe HexaPDF::Layout::ColumnBox do
         box = create_box(columns: 1, children: @fixed_size_boxes[0..0], width: 50,
                          style: {position: position})
         check_box(box, 50, 10)
+
+        box = create_box(children: @fixed_size_boxes[0..0], width: 110)
+        refute(box.fit(@frame.available_width, @frame.available_height, @frame))
       end
 
       it "respects the set initial height, position #{position}" do
@@ -83,6 +86,9 @@ describe HexaPDF::Layout::ColumnBox do
         box = create_box(children: @text_boxes[0..1], height: 50, equal_height: true,
                          style: {position: position})
         check_box(box, 100, 50)
+
+        box = create_box(children: @fixed_size_boxes[0..0], height: 110)
+        refute(box.fit(@frame.available_width, @frame.available_height, @frame))
       end
 
       it "respects the border and padding around all columns, position #{position}" do
@@ -144,15 +150,15 @@ describe HexaPDF::Layout::ColumnBox do
 
       it "fails if the necessary width is larger than the available one" do
         box = create_box(children: @fixed_size_boxes[0..2], columns: 4, gaps: [40])
-        assert(box.fit(100, 100, @frame).failure?)
+        refute(box.fit(100, 100, @frame))
       end
     end
   end
 
   it "splits the children if they are too big to fill the colums" do
-    box = create_box(children: @fixed_size_boxes, width: 50)
-    assert(box.fit(100, 50, @frame).overflow?)
-    box_a, box_b = box.split
+    box = create_box(children: @fixed_size_boxes, width: 50, height: 50)
+    box.fit(100, 100, @frame)
+    box_a, box_b = box.split(100, 100, @frame)
     assert_same(box, box_a)
     assert(box_b.split_box?)
     assert_equal(5, box_b.children.size)
@@ -165,7 +171,7 @@ describe HexaPDF::Layout::ColumnBox do
 
     it "draws the result onto the canvas" do
       box = create_box(children: @fixed_size_boxes)
-      assert(box.fit(100, 100, @frame).success?)
+      box.fit(100, 100, @frame)
       box.draw(@canvas, 0, 100 - box.height)
       operators = 90.step(to: 20, by: -10).map do |y|
         [[:save_graphics_state],
@@ -187,7 +193,7 @@ describe HexaPDF::Layout::ColumnBox do
 
     it "takes a different final location into account" do
       box = create_box(children: @fixed_size_boxes[0, 2], style: {padding: [2, 4, 6, 8]})
-      assert(box.fit(100, 100, @frame).success?)
+      box.fit(100, 100, @frame)
       box.draw(@canvas, 20, 10)
       operators = [
         [:save_graphics_state],

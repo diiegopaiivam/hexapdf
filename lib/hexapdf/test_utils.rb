@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -92,9 +92,8 @@ module HexaPDF
     # Creates a fiber that yields the given string in +len+ length parts.
     def feeder(string, len = string.length)
       Fiber.new do
-        string = string.b
         until string.empty?
-          Fiber.yield(string.slice!(0, len))
+          Fiber.yield(string.slice!(0, len).force_encoding('BINARY'))
         end
       end
     end

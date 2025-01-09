@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -87,7 +87,7 @@ module HexaPDF
 
     # Computes the hash value based on the object and generation numbers.
     def hash
-      [oid, gen].hash
+      oid.hash ^ gen.hash
     end
 
     # Returns the object identifier as "oid,gen".

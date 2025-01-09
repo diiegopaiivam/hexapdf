@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -52,13 +52,9 @@ module HexaPDF
     # The items of a text fragment may be frozen to indicate that the fragment is potentially used
     # multiple times.
     #
-    # The rectangle with the bottom-left corner (#x_min, #y_min) and the top-right corner (#x_max,
+    # The rectangle with the bottom left corner (#x_min, #y_min) and the top right corner (#x_max,
     # #y_max) describes the minimum bounding box of the whole text fragment and is usually *not*
     # equal to the box (0, 0)-(#width, #height).
-    #
-    # *Note*: This class should not be used directly but via
-    # HexaPDF::Document::Layout#text_fragments. This way the whole document layout infrastructure
-    # like font fallback and such is automatically used.
     class TextFragment
 
       using NumericRefinements
@@ -68,8 +64,6 @@ module HexaPDF
       # The needed style of the text fragment is specified by the +style+ argument (see
       # Style::create for details). Note that the resulting style object needs at least the font
       # set.
-      #
-      # For internal use, see the note under TextFragment for details.
       def self.create(text, style)
         style = Style.create(style)
         fragment = new(style.font.decode_utf8(text), style)
@@ -96,8 +90,6 @@ module HexaPDF
       # The needed style of the text fragments is specified by the +style+ argument (see
       # Style::create for details). Note that the resulting style object needs at least the font
       # set.
-      #
-      # For internal use, see the note under TextFragment for details.
       def self.create_with_fallback_glyphs(text, style)
         return [create(text, style)] if !block_given? || text.empty?
 
@@ -163,8 +155,6 @@ module HexaPDF
       #
       # The argument +style+ can either be a Style object or a hash of style properties, see
       # Style::create for details.
-      #
-      # For internal use, see the note under TextFragment for details.
       def initialize(items, style, properties: nil)
         @items = items
         @style = Style.create(style)
@@ -245,7 +235,6 @@ module HexaPDF
           end
         end
 
-        in_text_object = (canvas.graphics_object == :text)
         canvas.begin_text
         tlm = canvas.graphics_state.tlm
         tx = x - tlm.e
@@ -259,7 +248,7 @@ module HexaPDF
         elsif ty.abs < PRECISION
           canvas.move_text_cursor(offset: [tx, 0], absolute: false)
         else
-          canvas.move_text_cursor(offset: [x, y], absolute: in_text_object)
+          canvas.move_text_cursor(offset: [x, y])
         end
         canvas.show_glyphs_only(items)
 

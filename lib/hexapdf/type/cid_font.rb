@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -61,16 +61,13 @@ module HexaPDF
 
       DEFAULT_WIDTH = 1000 # :nodoc:
 
-      define_field :Subtype,         type: Symbol, required: true,
-                   allowed_values: [:CIDFontType0, :CIDFontType2]
       define_field :BaseFont,        type: Symbol, required: true
       define_field :CIDSystemInfo,   type: :XXCIDSystemInfo, required: true
-      define_field :FontDescriptor,  type: :FontDescriptor, required: true
-      define_field :DW,              type: Numeric, default: DEFAULT_WIDTH
+      define_field :FontDescriptor,  type: :FontDescriptor, indirect: true, required: true
+      define_field :DW,              type: Integer, default: DEFAULT_WIDTH
       define_field :W,               type: PDFArray
       define_field :DW2,             type: PDFArray, default: [880, -1100]
       define_field :W2,              type: PDFArray
-      define_field :CIDToGIDMap,     type: [Stream, Symbol]
 
       # Returns the unscaled width of the given CID in glyph units, or 0 if the width for the CID is
       # missing.

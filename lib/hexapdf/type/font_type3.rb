@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -49,6 +49,7 @@ module HexaPDF
     class FontType3 < FontSimple
 
       define_field :Subtype,    type: Symbol, required: true, default: :Type3
+      define_field :Name,       type: Symbol
       define_field :FontBBox,   type: Rectangle, required: true
       define_field :FontMatrix, type: PDFArray, required: true
       define_field :CharProcs,  type: Dictionary, required: true

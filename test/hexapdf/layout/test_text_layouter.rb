@@ -743,12 +743,10 @@ describe HexaPDF::Layout::TextLayouter do
       result = processor.recorded_ops
       leading = (result.select {|name, _| name == :set_leading } || [0]).map(&:last).flatten.first
       pos = [0, 0]
-      result.select! do |name, _|
-        name == :set_text_matrix || name == :move_text || name == :move_text_next_line
-      end.map! do |name, ops|
+      result.select! {|name, _| name == :set_text_matrix || name == :move_text_next_line }.
+        map! do |name, ops|
         case name
         when :set_text_matrix then pos = ops[-2, 2]
-        when :move_text then pos = ops
         when :move_text_next_line then pos[1] -= leading
         end
         pos.dup
@@ -814,7 +812,10 @@ describe HexaPDF::Layout::TextLayouter do
                                           [:restore_graphics_state],
                                           [:save_graphics_state],
                                           [:concatenate_matrix, [1, 0, 0, 1, 10, -40]],
+                                          [:save_graphics_state],
+                                          [:concatenate_matrix, [1, 0, 0, 1, 0, 0]],
                                           [:set_line_width, [2]],
+                                          [:restore_graphics_state],
                                           [:restore_graphics_state],
                                           [:save_graphics_state],
                                           [:restore_graphics_state]])

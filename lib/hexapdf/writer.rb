@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -149,7 +149,6 @@ module HexaPDF
       obj_to_stm = object_streams.each_with_object({}) {|stm, m| m.update(stm.write_objects(rev)) }
 
       xref_section = XRefSection.new
-      xref_section.mark_as_initial_section! unless previous_xref_pos
       xref_section.add_free_entry(0, 65535) if previous_xref_pos.nil?
       rev.each do |obj|
         if obj.null?
@@ -164,7 +163,6 @@ module HexaPDF
 
       trailer = rev.trailer.value.dup
       trailer.delete(:XRefStm)
-      trailer.delete(:Type)
       if previous_xref_pos
         trailer[:Prev] = previous_xref_pos
       else

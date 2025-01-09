@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -51,7 +51,7 @@ module HexaPDF
         attr_accessor :name
 
         # Character bounding box as array of four numbers, specifying the x- and y-coordinates of
-        # the bottom-left corner and the x- and y-coordinates of the top-right corner.
+        # the bottom left corner and the x- and y-coordinates of the top right corner.
         attr_accessor :bbox
 
       end

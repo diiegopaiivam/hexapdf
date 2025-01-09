@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -79,11 +79,9 @@ module HexaPDF
         false
       end
 
-      private
-
       # Fits the image into the current region of the frame, taking the initially set width and
       # height into account (see the class description for details).
-      def fit_content(available_width, available_height, _frame)
+      def fit(available_width, available_height, _frame)
         image_width = @image.width.to_f
         image_height = @image.height.to_f
         image_ratio = image_width / image_height
@@ -105,9 +103,11 @@ module HexaPDF
           @height = image_height * ratio + rh
         end
 
-        fit_result.success! if float_compare(@width, available_width) <= 0 &&
+        @fit_successful = float_compare(@width, available_width) <= 0 &&
           float_compare(@height, available_height) <= 0
       end
+
+      private
 
       # Draws the image onto the canvas at position [x, y].
       def draw_content(canvas, x, y)

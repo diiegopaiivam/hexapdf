@@ -16,10 +16,8 @@
 require 'hexapdf'
 
 HexaPDF::Composer.create('composer_optional_content.pdf') do |composer|
-  composer.styles(
-    question: {font_size: 16, margin: [0, 0, 16], fill_color: 'hp-blue'},
-    answer: {font: 'ZapfDingbats', fill_color: "green"},
-  )
+  composer.style(:question, font_size: 16, margin: [0, 0, 16], fill_color: 'hp-blue')
+  composer.style(:answer, font: 'ZapfDingbats', fill_color: "green")
 
   all = composer.document.optional_content.ocg('All answers')
   a1 = composer.document.optional_content.ocg('Answer 1')
@@ -40,7 +38,7 @@ HexaPDF::Composer.create('composer_optional_content.pdf') do |composer|
           answers.text('Guido van Rossum')
           answers.multiple do |answer|
             answer.text('Yukihiro “Matz” Matsumoto', position: :float)
-            answer.text("\u{a0}\u{a0}✔", style: :answer,
+            answer.text("\u{a0}\u{a0}4", style: :answer,
                         properties: {'optional_content' => a1})
           end
           answers.text('Rob Pike')
@@ -56,7 +54,7 @@ HexaPDF::Composer.create('composer_optional_content.pdf') do |composer|
           answers.text('1992')
           answers.multiple do |answer|
             answer.text('1993', position: :float)
-            answer.text("\u{a0}\u{a0}✔", style: :answer,
+            answer.text("\u{a0}\u{a0}4", style: :answer,
                         properties: {'optional_content' => a2})
           end
         end

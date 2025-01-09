@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -134,12 +134,11 @@ module HexaPDF
           if !normal_appearance.kind_of?(HexaPDF::Dictionary) || normal_appearance.kind_of?(HexaPDF::Stream)
             (@widget[:AP] ||= {})[:N] = {Off: nil}
             normal_appearance = @widget[:AP][:N]
-            normal_appearance[@field.field_value&.to_sym || :Yes] = nil
+            normal_appearance[@field[:V] == :Off ? :Yes : @field[:V]] = nil
           end
           on_name = (normal_appearance.value.keys - [:Off]).first
           unless on_name
-            on_name = @field.field_value&.to_sym || :Yes
-            normal_appearance[on_name] = nil
+            raise HexaPDF::Error, "Widget of button field doesn't define name for on state"
           end
 
           @widget[:AS] = (@field[:V] == on_name ? on_name : :Off)
@@ -227,11 +226,8 @@ module HexaPDF
 
           form = (@widget[:AP] ||= {})[:N] ||= @document.add({Type: :XObject, Subtype: :Form})
           # Wrap existing object in Form class in case the PDF writer didn't include the /Subtype
-          # key or the type of the object is wrong; we can do this since we know this has to be a
-          # Form object
-          unless form.type == :XObject && form[:Subtype] == :Form
-            form = @document.wrap(form, type: :XObject, subtype: :Form)
-          end
+          # key; we can do this since we know this has to be a Form object
+          form = @document.wrap(form, type: :XObject, subtype: :Form) unless form[:Subtype] == :Form
           form.value.replace({Type: :XObject, Subtype: :Form, BBox: [0, 0, width, height],
                               Matrix: matrix, Resources: HexaPDF::Object.deep_copy(default_resources)})
           form.contents = ''

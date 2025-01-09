@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -97,7 +97,7 @@ module HexaPDF
               merge_revision = offset
             end
 
-            if merge_revision == offset && !revisions.empty?
+            if merge_revision == offset
               xref_section.merge!(revisions.first.xref_section)
               offset = trailer[:Prev] # Get possible next offset before overwriting trailer
               trailer = revisions.first.trailer

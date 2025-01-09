@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -159,9 +159,6 @@ module HexaPDF
       define_field :PresSteps,            type: Dictionary, version: '1.5'
       define_field :UserUnit,             type: Numeric, version: '1.6'
       define_field :VP,                   type: PDFArray, version: '1.6'
-      define_field :AF,                   type: PDFArray, version: '2.0'
-      define_field :OutputIntents,        type: PDFArray, version: '2.0'
-      define_field :DPart,                type: Dictionary, version: '2.0'
 
       # Returns +true+ since page objects must always be indirect.
       def must_be_indirect?
@@ -361,7 +358,7 @@ module HexaPDF
       def contents
         Array(self[:Contents]).each_with_object("".b) do |content_stream, content|
           content << " " unless content.empty?
-          content << content_stream.stream if content_stream.kind_of?(Stream)
+          content << content_stream.stream
         end
       end
 
@@ -383,7 +380,8 @@ module HexaPDF
       # Returns the, possibly inherited, resource dictionary which is automatically created if it
       # doesn't exist.
       def resources
-        self[:Resources] ||= document.wrap({}, type: :XXResources)
+        self[:Resources] ||= document.wrap({ProcSet: [:PDF, :Text, :ImageB, :ImageC, :ImageI]},
+                                           type: :XXResources)
       end
 
       # Processes the content streams associated with the page with the given processor object.

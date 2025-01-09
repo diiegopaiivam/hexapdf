@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -51,17 +51,17 @@ module HexaPDF
 
       define_type :ExtGState
 
-      define_field :Type,          type: Symbol, default: type
+      define_field :Type,          type: Symbol, required: true, default: type
       define_field :LW,            type: Numeric, version: "1.3"
       define_field :LC,            type: Integer, version: "1.3"
       define_field :LJ,            type: Integer, version: "1.3"
       define_field :ML,            type: Numeric, version: "1.3"
       define_field :D,             type: PDFArray, version: "1.3"
       define_field :RI,            type: Symbol, version: "1.3",
-                   allowed_values: [HexaPDF::Content::RenderingIntent::ABSOLUTE_COLORIMETRIC,
-                                    HexaPDF::Content::RenderingIntent::RELATIVE_COLORIMETRIC,
-                                    HexaPDF::Content::RenderingIntent::SATURATION,
-                                    HexaPDF::Content::RenderingIntent::PERCEPTUAL]
+        allowed_values: [HexaPDF::Content::RenderingIntent::ABSOLUTE_COLORIMETRIC,
+                         HexaPDF::Content::RenderingIntent::RELATIVE_COLORIMETRIC,
+                         HexaPDF::Content::RenderingIntent::SATURATION,
+                         HexaPDF::Content::RenderingIntent::PERCEPTUAL]
       define_field :OP,            type: Boolean
       define_field :op,            type: Boolean, version: "1.3"
       define_field :OPM,           type: Integer, version: "1.3"
@@ -82,9 +82,6 @@ module HexaPDF
       define_field :ca,            type: Numeric, version: "1.4"
       define_field :AIS,           type: Boolean, version: "1.4"
       define_field :TK,            type: Boolean, version: "1.4"
-      define_field :UseBlackPtComp, type: Symbol, version: "2.0",
-                   allowed_values: [:OFF, :ON, :Default]
-      define_field :HTO,           type: PDFArray, version: "2.0"
 
     end
 

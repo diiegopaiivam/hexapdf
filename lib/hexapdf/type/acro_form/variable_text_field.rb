@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -51,7 +51,7 @@ module HexaPDF
       # See: PDF2.0 s12.7.4.3
       class VariableTextField < Field
 
-        define_field :DA, type: PDFByteString
+        define_field :DA, type: String
         define_field :Q, type: Integer, default: 0, allowed_values: [0, 1, 2]
         define_field :DS, type: String, version: '1.5'
         define_field :RV, type: [String, Stream], version: '1.5'
@@ -106,7 +106,7 @@ module HexaPDF
               font_params[2] = HexaPDF::Content::ColorSpace.prenormalized_device_color(params)
             end
           end
-          HexaPDF::Content::Parser.parse(appearance_string.to_s.sub(/\/\//, '/'), &block)
+          HexaPDF::Content::Parser.parse(appearance_string.sub(/\/\//, '/'), &block)
           block_given? ? nil : font_params
         end
 
@@ -154,21 +154,13 @@ module HexaPDF
         # font_size, font_color].
         #
         # The default appearance string is taken from the given +widget+ of the field, falls back to
-        # the field itself and then the default appearance string of the form. If it still not
-        # available, a standard default appearance string is set (see
-        # #set_default_appearance_string) and used.
+        # the field itself or, if still not available, the default appearance string of the form.
         #
         # The reason why a specific widget of the field can be specified is because the widgets of a
         # field might differ in their visual representation.
         def parse_default_appearance_string(widget = self)
           da = widget[:DA] || self[:DA] || (document.acro_form && document.acro_form[:DA])
-          unless da
-            if (args = document.config['acro_form.fallback_default_appearance'])
-              da = set_default_appearance_string(**args)
-            else
-              raise HexaPDF::Error, "No default appearance string set"
-            end
-          end
+          raise HexaPDF::Error, "No default appearance string set" unless da
           self.class.parse_appearance_string(da)
         end
 

@@ -1,210 +1,3 @@
-## 1.1.1 - 2025-01-08
-
-### Fixed
-
-* Missing require statements leading to problems loading type classes
-
-
-## 1.1.0 - 2025-01-08
-
-### Added
-
-* Basic type classes for logical structure support
-
-### Changed
-
-* Optimized output of simple borders to avoid unnecessary drawing operations
-
-### Fixed
-
-* Type of field /DW for CIDFont which used to be Integer in PDF 1.7 but now is
-  Numeric inf 2.0
-* Validation of /ProcSet entry in resources dictionary to correctly handle the
-  case of /ProcSet having a Symbol value
-
-
-## 1.0.3 - 2024-12-04
-
-### Fixed
-
-* Offsets and lengths of revisions shown using the `inspect rev` CLI command for
-  linearized PDF files
-* [HexaPDF::Type::AcroForm::Form#recalculate_fields] to only consider real
-  fields
-
-
-## 1.0.2 - 2024-11-05
-
-### Added
-
-* [HexaPDF::Type::CMap] for representing CMap streams
-
-### Fixed
-
-* Checksum calculation for TrueType tables
-* Automatic wrapping of dictionary entry /CIDToGIDMap for CID fonts
-* Performance regression when encoding char codes for TrueType fonts
-* PDF/A validation regression for PDFs using TrueType fonts
-
-
-## 1.0.1 - 2024-11-04
-
-### Changed
-
-* Informational output on errors when running CLI commands to provide more
-  details
-
-### Fixed
-
-* Parsing of indirect objects the value of which is an indirect reference
-* Writing of the initial cross-reference section to ensure a single subsection
-* [HexaPDF::Utils::SortedTreeNode] to wrap all /Kids entries with the correct
-  type class
-
-
-## 1.0.0 - 2024-10-26
-
-### Added
-
-* [HexaPDF::Task::MergeAcroForm] for merging AcroForm information for imported
-  pages
-* [HexaPDF::Document#write_to_string] and [HexaPDF::Composer#write_to_string]
-  for easily writing a document to a String
-* [HexaPDF::Font::CMap::Writer#create_cid_cmap] for creating a character code to
-  CID CMap file
-
-### Changed
-
-* [HexaPDF::Type::AcroForm::Form] text-like field creation methods to always set
-  a default appearance string and the quadding
-* Convenience methods for accessing resources to not add the deprecated /ProcSet
-  entry by default
-* [HexaPDF::DigitalSignature::CMSHandler] to add informational output regarding
-  the certificate chain on verification
-* Validation of [HexaPDF::Type::FontType1] to ensure correct /Encoding value
-
-### Fixed
-
-* [HexaPDF::DigitalSignature::Signature#signed_data] to work for invalid offsets
-* [HexaPDF::DigitalSignature::Signing::DefaultHandler] to update the document's
-  version to 2.0 when using PAdES
-* Parsing of invalid `)` character in PDF objects and content streams
-* Handling of files that contain stream length values that are indirect objects
-  that do not exist
-* [HexaPDF::Font::TrueTypeWrapper] to correctly handle the situation when
-  multiple codepoints refer to the same glyph ID
-* [HexaPDF::Type::Page#contents] to handle null values in /Contents array
-
-
-## 0.47.0 - 2024-09-07
-
-### Added
-
-* Configuration option 'acro_form.fallback_default_appearance' to allow setting
-  a standard default appearance string for a variable text field if none is
-  found
-* Support for decrypting files with the proprietary algorithm /R 5
-
-### Changed
-
-* [HexaPDF::Task::Optimize] to not remove optional /Type entries containing
-  default values
-* Validation of [HexaPDF::Type::AcroForm::Form] to not add a /DA entry
-
-### Fixed
-
-* [HexaPDF::Layout::TableBox] to correctly calculcate and distribute row
-  heights when row spans are involved
-* [HexaPDF::Type::AcroForm::AppearanceGenerator] to work for files where check
-  boxes don't define the name of the on state
-* [HexaPDF::Importer#import] to handle null values in all cases
-* [HexaPDF::Type::AcroForm::VariableTextField] to handle parsing of invalid PDFs
-  with symbolic appearance strings
-* [HexaPDF::Type::Annotations::Widget#marker_style] to handle invalid /DA values
-  with missing font size or color information
-* [HexaPDF::Type::AcroForm::SignatureField#field_value] to always return a
-  correctly wrapped object
-* [HexaPDF::Writer] to remove /Type entry from trailer
-* [HexaPDF::Type::AcroForm::AppearanceGenerator#create_text_appearances] to
-  handle invalid appearance streams that are not correct Form XObjects
-
-
-## 0.46.0 - 2024-08-11
-
-### Added
-
-* [HexaPDF::DigitalSignature::CMSHandler#embedded_tsa_signature] to return the
-  embedded timestamp authority signature if any
-* [HexaPDF::DigitalSignature::Signing::DefaultHandler#signing_time] for setting
-  a custom signing time
-* [HexaPDF::Document#duplicate] for making an in-memory copy of a PDF document
-* Configuration option 'font.default' for setting the default font for the
-  document layout engine
-
-### Changed
-
-* [HexaPDF::Document::Layout::CellArgumentCollector#[]=] to allow stepped ranges
-* [HexaPDF::Document::Layout::ChildrenCollector] to also return the box when
-  creating and adding one to the list
-* [HexaPDF::Layout::InlineBox] to allow usage without predefined width
-* [HexaPDF::DigitalSignature::CMSHandler#verify] to recognize non-repudiation
-  signatures
-* [HexaPDF::DigitalSignature::CMSHandler#signing_time] to use time from an
-  embedded timestamp authority signature if possible
-* HexaPDF::Layout::Box#fit to return success for boxes with content
-  width/height of zero
-* [HexaPDF::Importer::copy] to optionally allow copying the catalog and page
-  tree nodes
-
-### Fixed
-
-* Setting of correct x-position in fit result for boxes with flow positioning
-* HexaPDF::Layout::ListBox#fit to respect the set height
-* CLI command `hexapdf inspect` to work in case of missing Unicde mappings
-* [HexaPDF::Type::AcroForm::Form#delete_field] to correctly work for fields with
-  an embedded widget
-* Parsing of "linearized" PDF files where the first cross-reference section
-  isn't actually used
-* [HexaPDF::Layout::PageStyle#create_page] to return new frame objects on each
-  invocation
-
-
-## 0.45.0 - 2024-06-18
-
-### Added
-
-* [HexaPDF::Document::Layout#styles] and [HexaPDF::Composer#styles] for defining
-  multiple styles at once
-
-### Changed
-
-* HexaPDF::Layout::Box#fit to set width/height correctly for boxes with
-  position `:flow`
-
-### Fixed
-
-* Regression in [HexaPDF::Layout::ListBox] that leads to missing markers
-* [HexaPDF::Content::CanvasComposer#draw_box] to handle truncated boxes
-* [HexaPDF::Layout::TableBox::Cell] to handle too-big content in all cases
-
-
-## 0.44.0 - 2024-06-05
-
-### Added
-
-* Support for specifying the MIME type when embedding files
-* Support for adding custom XMP metadata
-
-### Changed
-
-* **Breaking change**: Refactored the box implementation of the document layout
-  system
-
-### Fixed
-
-* Parsing of invalid files with garbage bytes at the end
-
-
 ## 0.43.0 - 2024-05-26
 
 ### Added
@@ -224,9 +17,9 @@
 
 ### Fixed
 
-* HexaPDF::Layout::TextBox#fit to correctly calculate width in case of flowing
+* [HexaPDF::Layout::TextBox#fit] to correctly calculate width in case of flowing
   text around other boxes
-* HexaPDF::Layout::TextBox#draw to correctly draw border, background... on
+* [HexaPDF::Layout::TextBox#draw] to correctly draw border, background... on
   boxes using position 'flow'
 * Comparison of Hash with [HexaPDF::Dictionary] objects by implementing
   `#to_hash`
@@ -280,7 +73,7 @@
   JavaScript action that formats the field's value
 * [HexaPDF::Type::AcroForm::TextField#set_calculate_action] for setting a
   JavaScript action that calculates the field's value
-* [HexaPDF::Type::AcroForm::Form#recalculate_fields] for recalculating fields
+* [HexaPDF::Type::AcroForm#recalculate_fields] for recalculating fields
 
 ### Changed
 
@@ -337,7 +130,7 @@
 
 ### Changed
 
-* HexaPDF::Layout::Frame::FitResult#draw to provide better optional content
+* [HexaPDF::Layout::Frame::FitResult#draw] to provide better optional content
   group names
 
 ### Fixed
@@ -416,8 +209,8 @@
 
 ### Changed
 
-* HexaPDF::Layout::Frame::FitResult#draw to allow drawing at an offset
-* HexaPDF::Layout::Box#fit to delegate the actual content fitting to the
+* [HexaPDF::Layout::Frame::FitResult#draw] to allow drawing at an offset
+* [HexaPDF::Layout::Box#fit] to delegate the actual content fitting to the
   `#fit_content` method
 * [HexaPDF::Document::Layout#box] to allow using the block as drawing block for
   the base box class
@@ -494,8 +287,8 @@
 
 ### Fixed
 
-* HexaPDF::Layout::ColumnBox#fit to correctly take initial height into account
-* HexaPDF::Layout::ColumnBox#fit to ensure correct results in case the
+* [HexaPDF::Layout::ColumnBox#fit] to correctly take initial height into account
+* [HexaPDF::Layout::ColumnBox#fit] to ensure correct results in case the
   requested dimensions are larger than the current region
 * [HexaPDF::Document::Layout#formatted_text_box] to correctly handle properties
 * [HexaPDF::Layout::Frame#fit] to raise an error if an invalid value for the
@@ -541,16 +334,16 @@
   context argument (a page or Form XObject instance)
 * [HexaPDF::Layout::ListBox] to use its 'fill_color' style property for the item
   marker color
-* HexaPDF::Layout::Frame::FitResult#draw to use optional content groups for
+* [HexaPDF::Layout::Frame::FitResult#draw] to use optional content groups for
   debug output
 
 ### Fixed
 
-* [HexaPDF::Document::Pages#add_labelling_range] to add a correct entry for the
-  default range starting at page 1
+* [HexaPDF::Document::Pages#add_labelling_range] to add a correct entry for
+  the default range starting at page 1
 * [HexaPDF::Type::Page#flatten_annotations] to correctly handle scaled
   appearances
-* Using an unknown style name in [HexaPDF::Document::Layout] method by providing
+* Using an unknown style name in [HexaPDF:Document::Layout] method by providing
   a useful error message
 * [HexaPDF::Layout::Box::new] to ensure that the properties attribute is always
   a hash
@@ -558,8 +351,6 @@
   than the item content height
 * [HexaPDF::Dictionary] setting default values on wrong classes in certain
   situations
-* [HexaPDF::Importer#import] to correctly import stream objects backed by a
-  [HexaPDF::FiberDoubleForString]
 
 
 ## 0.33.0 - 2023-08-02
@@ -611,9 +402,9 @@
   final box positions into account
 * [HexaPDF::Content::Canvas#text] to set the leading only when multiple lines
   are drawn
-* HexaPDF::Layout::TextBox#split to use float comparison
-* Validation of standard encryption dictionary to auto-correct invalid /U and /O
-  fields in case they are padded with zeros
+* [HexaPDF::Layout::TextBox#split] to use float comparison
+* Validation of standard encryption dictionary to auto-correct invalid /U and
+  /O fields in case they are padded with zeros
 * [HexaPDF::Document#wrap] handling of sub-type mapping in case of missing type
 * [HexaPDF::Type::AcroForm::AppearanceGenerator] to also take a text field
   widget's width into account when auto-sizing
@@ -934,8 +725,8 @@
 * Support for the document outline
 * [HexaPDF::Layout::Style#line_height] for setting a custom line height
   independent of the font size
-* [HexaPDF::Document::Destinations#use_or_create] as unified interface for using
-  or creating destinations
+* [HexaPDF::Document::Destinations#use_or_create] as unified interface for
+  using or creating destinations
 * [HexaPDF::Document::Destinations::Destination#valid?] and class method for
   checking whether a destination array is valid
 
@@ -944,8 +735,8 @@
 * Calculation of text related [HexaPDF::Layout::Style] values for Type3 fonts
 * [HexaPDF::Encryption::SecurityHandler#encrypt_string] to either return a
   dupped or encrypted string
-* [HexaPDF::Layout::TextLayouter#fit] to avoid infinite loop when encountering a
-  non-zero width breakpoint penalty
+* [HexaPDF::Layout::TextLayouter#fit] to avoid infinite loop when encountering
+  a non-zero width breakpoint penalty
 * [HexaPDF::Type::ObjectStream] to parse the initial stream data right after
   initialization to avoid access errors
 * [HexaPDF::Revisions::from_io] to merge a completely empty revision with just a
@@ -1027,8 +818,9 @@
   fragment if there would not be enough height left anyway
 * [HexaPDF::Layout::WidthFromPolygon] to work correctly in case of very small
   floating point errors
-* HexaPDF::Layout::TextFragment#inspect to work in case of interspersed numbers
-* HexaPDF::Layout::TextBox#split to work for position :flow when box is wider
+* HexaPDF::Layout::TextFragment#inspect to work in case of interspersed
+  numbers
+* [HexaPDF::Layout::TextBox#split] to work for position :flow when box is wider
   than the initial available width
 * [HexaPDF::Layout::Frame#fit] to create minimally sized mask rectangles
 * [HexaPDF::Content::GraphicObject::Geom2D] to close the path when drawing
@@ -1309,8 +1101,8 @@
   dictionary are indirect objects
 * [HexaPDF::Content::GraphicObject::EndpointArc] to correctly determine the
   start and end points
-* HexaPDF::Dictionary#perform_validation to correctly handle objects that should
-  not be indirect objects
+* HexaPDF::Dictionary#perform_validation to correctly handle objects that
+  should not be indirect objects
 
 
 ## 0.17.3 - 2021-10-31
@@ -1432,8 +1224,8 @@
 
 ### Fixed
 
-* [HexaPDF::Type::Annotation#appearance] to handle cases where there is no valid
-  appearance stream
+* [HexaPDF::Type::Annotation#appearance] to handle cases where there is
+  no valid appearance stream
 
 
 ## 0.15.3 - 2021-05-01
@@ -1488,8 +1280,8 @@
   empty background color arrays
 * [HexaPDF::Type::AcroForm::Field#delete_widget] to update the wrapper object
   stored in the document in case the widget is embedded
-* Processing of invalid PDF files containing a space,CR,LF combination after the
-  'stream' keyword
+* Processing of invalid PDF files containing a space,CR,LF combination after
+  the 'stream' keyword
 * Cross-reference stream reconstruction with respect to detection of linearized
   files
 * Detection of existing appearances for AcroForm push button fields when
@@ -1584,8 +1376,8 @@
 
 * [HexaPDF::Utils::ObjectHash#oids] to be public instead of private
 * Cross-reference table parsing to handle invalidly numbered main sections
-* [HexaPDF::Document#cache] and [HexaPDF::Object#cache] to allow updating values
-  for existing keys
+* [HexaPDF::Document#cache] and [HexaPDF::Object#cache] to allow updating
+  values for existing keys
 * Appearance creation methods of AcroForm objects to allow forcing the creation
   of new appearances
 * [HexaPDF::Type::AcroForm::AppearanceGenerator#create_text_appearances] to
@@ -1623,8 +1415,8 @@
   new 'parser.try_xref_reconstruction' option
 * Two new `hexapdf inspect` commands for showing page objects and page content
   streams by page number
-* Flag `--check` to the CLI command `hexapdf info` for checking a file for parse
-  and validation errors
+* Flag `--check` to the CLI command `hexapdf info` for checking a file for
+  parse and validation errors
 * [HexaPDF::Type::AcroForm::Field#embedded_widget?] for checking if a widget is
   embedded in the field object
 * [HexaPDF::Type::AcroForm::Field#delete_widget] for deleting a widget
@@ -1681,8 +1473,8 @@
 
 ### Added
 
-* [HexaPDF::Font::Encoding::Base#code] for retrieving the code for a given glyph
-  name
+* [HexaPDF::Font::Encoding::Base#code] for retrieving the code for a given
+  glyph name
 
 ### Fixed
 
@@ -1698,11 +1490,11 @@
   [HexaPDF::Type::AcroForm::Field]
 * [HexaPDF::Type::AcroForm::TextField] and
   [HexaPDF::Type::AcroForm::VariableTextField] for basic text field support
-* [HexaPDF::Type::AcroForm::ButtonField] for push button, radio button and check
-  box support
+* [HexaPDF::Type::AcroForm::ButtonField] for push button, radio button and
+  check box support
 * [HexaPDF::Type::AcroForm::ChoiceField] for combo box and list box support
-* [HexaPDF::Type::AcroForm::AppearanceGenerator] as central class for generating
-  appearance streams for form fields
+* [HexaPDF::Type::AcroForm::AppearanceGenerator] as central class for
+  generating appearance streams for form fields
 * Various convenience methods for [HexaPDF::Type::AcroForm::Form]
 * Various convenience methods for [HexaPDF::Type::AcroForm::Field]
 * Various convenience methods for [HexaPDF::Type::Annotations::Widget]
@@ -1721,8 +1513,8 @@
 * [HexaPDF::Type::Annotation::Border] class
 * [HexaPDF::Content::ColorSpace::device_color_from_specification] for easily
   getting a device color object
-* [HexaPDF::Content::ColorSpace::prenormalized_device_color] for getting a
-  device color object without normalizing values
+* [HexaPDF::Content::ColorSpace::prenormalized_device_color] for getting a device
+  color object without normalizing values
 * [HexaPDF::Type::Annotation#appearance] for returning the associated appearance
   dictionary
 * [HexaPDF::Type::Annotation#appearance?] for checking whether an appearance for
@@ -1841,8 +1633,8 @@
 
 ### Fixed
 
-* Conversion of [HexaPDF::Rectangle] type when the original is not a plain Array
-  but a [HexaPDF::PDFArray]
+* Conversion of [HexaPDF::Rectangle] type when the original is not a plain
+  Array but a [HexaPDF::PDFArray]
 
 
 ## 0.11.1 - 2019-11-19
@@ -1964,7 +1756,7 @@
   objects
 * [HexaPDF::Revision#each_modified_object] for iterating over all modified
   objects of a revision
-* [HexaPDF::Layout::Box#split] and HexaPDF::Layout::TextBox#split for
+* [HexaPDF::Layout::Box#split] and [HexaPDF::Layout::TextBox#split] for
   splitting a box into two parts
 * [HexaPDF::Layout::Frame#full?] for testing whether the frame has any space
   left
@@ -2003,12 +1795,12 @@
 
 ### Added
 
-* [HexaPDF::Layout::Frame] for box positioning and easier text layouting inside
-  an arbitrary polygon
+* [HexaPDF::Layout::Frame] for box positioning and easier text layouting
+  inside an arbitrary polygon
 * [HexaPDF::Layout::TextBox] for displaying text in a rectangular and for
   flowing text inside a frame
-* [HexaPDF::Layout::WidthFromPolygon] for getting a width specification from a
-  polygon for use with the text layouting engine
+* [HexaPDF::Layout::WidthFromPolygon] for getting a width specification from
+  a polygon for use with the text layouting engine
 * [HexaPDF::Type::Image#width] and [HexaPDF::Type::Image#height] convenience
   methods
 * [HexaPDF::Type::FontType3] for Type 3 font support
@@ -2060,12 +1852,12 @@
   character in a text fragment is \r
 * [HexaPDF::Layout::TextLayouter] to work if an optional break point (think
   soft-hyphen) is followed by whitespace
-* [HexaPDF::Font::TrueType::Builder] to correctly order the entries in the table
-  directory
+* [HexaPDF::Font::TrueType::Builder] to correctly order the entries in the
+  table directory
 * [HexaPDF::Font::TrueType::Builder] to pad the table data to achieve the
   correct alignment
-* [HexaPDF::Filter::FlateDecode] by removing the Zlib pools since they were not
-  thread safe
+* [HexaPDF::Filter::FlateDecode] by removing the Zlib pools since they were
+  not thread safe
 * All color space classes to accept the color space definition as argument to
   `::new`
 
@@ -2097,8 +1889,9 @@
 * Cross-reference subsection parsing can handle missing whitespace
 * Renamed HexaPDF::Layout::LineFragment to [HexaPDF::Layout::Line]
 * Renamed HexaPDF::Layout::TextBox to [HexaPDF::Layout::TextLayouter]
-* [HexaPDF::Layout::TextFragment::new] and [HexaPDF::Layout::TextLayouter::new]
-  to either take a Style object or style options
+* [HexaPDF::Layout::TextFragment::new] and
+  [HexaPDF::Layout::TextLayouter::new] to either take a Style object or
+  style options
 * [HexaPDF::Layout::TextLayouter#fit] method signature
 * [HexaPDF::Layout::InlineBox] to wrap a generic box
 * HexaPDF::Document::Fonts#load to [HexaPDF::Document::Fonts#add] for
@@ -2160,8 +1953,8 @@
 
 * Handling of invalid glyphs is done using the special
   [HexaPDF::Font::InvalidGlyph] class
-* Configuration option 'font.on_missing_glyph'; returns an invalid glyph instead
-  of raising an error
+* Configuration option 'font.on_missing_glyph'; returns an invalid glyph
+  instead of raising an error
 * Bounding box of TrueType glyphs without contours is set to `[0, 0, 0, 0]`
 * Ligature pairs for AFM fonts are stored like kerning pairs
 * Use TrueType configuration option 'font.true_type.unknown_format' in all
@@ -2178,8 +1971,8 @@
 
 * [HexaPDF::Task::Dereference] to work correctly when encountering invalid
   references
-* [HexaPDF::Tokenizer] and HexaPDF::Content::Tokenizer to parse a solitary plus
-  sign
+* [HexaPDF::Tokenizer] and HexaPDF::Content::Tokenizer to parse a solitary
+  plus sign
 * Usage of Strings instead of Symbols for AFM font kerning and ligature pairs
 * Processing the contents of form XObjects in case they don't have a resources
   dictionary
@@ -2202,8 +1995,8 @@
 * CLI option `--verbose` for more verbose output; also changed the default
   verbosity level to only display warnings and not informational messages
 * CLI option `--quiet` for suppressing additional and diagnostic output
-* CLI option `--strict` for enabling strict parsing and validation; also changed
-  the default from strict to non-strict parsing/validation
+* CLI option `--strict` for enabling strict parsing and validation; also
+  changed the default from strict to non-strict parsing/validation
 * CLI optimization option `--optimize-fonts` for optimizing embedded fonts
 * Method `#word_spacing_applicable?` to font types
 * Support for marked-content points and sequences in [HexaPDF::Content::Canvas]

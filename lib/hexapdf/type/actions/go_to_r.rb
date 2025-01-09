@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -48,7 +48,6 @@ module HexaPDF
         define_field :S,         type: Symbol, required: true, default: :GoToR
         define_field :F,         type: :Filespec, required: true
         define_field :D,         type: [Symbol, PDFByteString, PDFArray], required: true
-        define_field :SD,        type: PDFArray, version: '2.0'
         define_field :NewWindow, type: Boolean, version: '1.2'
 
       end

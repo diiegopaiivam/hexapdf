@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -71,10 +71,6 @@ module HexaPDF
     end
 
     # Returns +true+ if the PDF file is a linearized file.
-    #
-    # Note: The method uses heuristics to determine whether a PDF file is linearized. In case of
-    # slightly invalid or damaged PDFs that HexaPDF can recover from it is possible that this method
-    # returns +true+ even though the PDF isn't actually linearized.
     def linearized?
       @linearized ||=
         begin
@@ -116,11 +112,7 @@ module HexaPDF
                         "the values (#{xref_entry.oid},#{xref_entry.gen}) from the xref")
       end
 
-      if obj.kind_of?(Reference)
-        @document.deref(obj)
-      else
-        @document.wrap(obj, oid: oid, gen: gen, stream: stream)
-      end
+      @document.wrap(obj, oid: oid, gen: gen, stream: stream)
     rescue HexaPDF::MalformedPDFError
       reconstructed_revision.object(xref_entry) ||
         @document.wrap(nil, oid: xref_entry.oid, gen: xref_entry.gen)
@@ -188,7 +180,7 @@ module HexaPDF
         length = if object[:Length].kind_of?(Integer)
                    object[:Length]
                  elsif object[:Length].kind_of?(Reference)
-                   @document.deref(object[:Length])&.value || 0
+                   @document.deref(object[:Length]).value
                  else
                    0
                  end
@@ -301,7 +293,7 @@ module HexaPDF
             next
           elsif type == 'n'
             if pos == 0 || gen > 65535
-              maybe_raise("Invalid in use cross-reference entry for object number #{oid}",
+              maybe_raise("Invalid in use cross-reference entry",
                           pos: @tokenizer.pos)
               xref.add_free_entry(oid, gen)
             else
@@ -373,14 +365,11 @@ module HexaPDF
         # Need to iterate through the whole lines array in case there are multiple %%EOF to try
         eof_index = 0
         while (eof_index = lines[0..(eof_index - 1)].rindex {|l| l.strip == '%%EOF' })
-          if eof_index > 0 && lines[eof_index - 1].strip =~ /\Astartxref\s(\d+)\z/
+          if lines[eof_index - 1].strip =~ /\Astartxref\s(\d+)\z/
             startxref_offset = $1.to_i
             startxref_mangled = true
             break # we found it even if it the syntax is not entirely correct
-          elsif eof_index < 2
-            startxref_missing = true
-            break
-          elsif lines[eof_index - 2].strip != "startxref"
+          elsif eof_index < 2 || lines[eof_index - 2].strip != "startxref"
             startxref_missing = true
           else
             startxref_offset = lines[eof_index - 1].to_i

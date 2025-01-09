@@ -73,15 +73,21 @@ The list of the benchmarked applications:
   CSP
   : `hexapdf optimize INPUT --compress-pages OUTPUT`
 
-  Note that a lot of time is spent deflating when recompressing pages. This is because HexaPDF uses
-  the highest deflate compression level by default. By changing the configuration option
-  'filter.flate.compression' to something lower than 9, it is possible to trade compression speed
-  with file size.
+**origami**
+
+: Homepage: <https://github.com/gdelugre/origami>\\
+  Version: 2.1.0\\
+  Abilities: ?
+
+  Similar to HexaPDF Origami is a framework for manipulating PDF files. Since it is also written in
+  Ruby, it makes for a good comparison.
+
+  The `origami.rb` script can be invoked like `ruby origami.rb INPUT OUTPUT`.
 
 **combine_pdf**
 
 : Homepage: <https://github.com/boazsegev/combine_pdf>\\
-  Version: 1.0.29\\
+  Version: 1.0.23\\
   Abilities: ?
 
   CombinePDF is a tool for merging PDF files, written in Ruby.
@@ -91,7 +97,7 @@ The list of the benchmarked applications:
 **pdftk**
 
 : Homepage: <https://gitlab.com/marcvinyals/pdftk>\\
-  Version: 3.3.3\\
+  Version: 3.3.2\\
   Abilities: C
 
   `pdftk` is probably one of the best known applications because, like `hexapdf` it allows for many
@@ -112,17 +118,16 @@ The list of the benchmarked applications:
   The standard `C` mode of operation is invoked with `qpdf INPUT OUTPUT` whereas the CS mode would
   need an additional option `--object-streams=generate`.
 
-**cpdf**
-: Homepage: <http://www.coherentpdf.com/>\\
-  Version: 2.8\\
-  Abilities: CS, CSP
+**smpdf**
+: Homepage: <http://www.coherentpdf.com/compression.html>\\
+  Version: 1.4.1\\
+  Abilities: CSP
 
   This is a commercial application but can be used for evaluation purposes. There is no way to
   configure the operations done but judging from its output it seems it does all of the lossless
   operations.
 
-  Invocation is done like this: `cpdf -squeeze -squeeze-no-pagedata INPUT -o OUTPUT` (for CS, the
-  `-squeeze-no-pagedata` is removed for CSP).
+  Invocation is done like this: `smpdf INPUT -o OUTPUT`.
 
 
 The standard files used in the benchmark (*not* available in the HexaPDF distribution) vary in file

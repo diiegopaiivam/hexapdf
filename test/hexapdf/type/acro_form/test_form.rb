@@ -159,16 +159,11 @@ describe HexaPDF::Type::AcroForm::Form do
     end
 
     def applies_variable_text_properties(method, **args)
-      field = @acro_form.send(method, "field", **args)
-      font_name, font_size, font_color = field.parse_default_appearance_string
-      assert_equal(:'Helvetica', @acro_form.default_resources.font(font_name)[:BaseFont])
-      assert_equal(0, font_size)
-      assert_equal(HexaPDF::Content::ColorSpace::DeviceGray.new.color(0), font_color)
-      assert_equal(0, field.value[:Q])
-
       field = @acro_form.send(method, "field", **args, font: 'Times')
       font_name, font_size, font_color = field.parse_default_appearance_string
       assert_equal(:'Times-Roman', @acro_form.default_resources.font(font_name)[:BaseFont])
+      assert_equal(0, font_size)
+      assert_equal(HexaPDF::Content::ColorSpace::DeviceGray.new.color(0), font_color)
 
       field = @acro_form.send(method, "field", **args, font_options: {variant: :bold})
       font_name, = field.parse_default_appearance_string
@@ -176,6 +171,7 @@ describe HexaPDF::Type::AcroForm::Form do
 
       field = @acro_form.send(method, "field", **args, font_size: 10)
       font_name, font_size = field.parse_default_appearance_string
+      assert_equal(:Helvetica, @acro_form.default_resources.font(font_name)[:BaseFont])
       assert_equal(10, font_size)
 
       field = @acro_form.send(method, "field", **args, font_color: "red")
@@ -276,15 +272,6 @@ describe HexaPDF::Type::AcroForm::Form do
       @field.field_value = obj
       @acro_form.delete_field(@field)
       assert(obj.null?)
-    end
-
-    it "deletes a field with an embedded widget annotation" do
-      widget = @field.create_widget(@doc.pages.add, Rect: [0, 0, 0, 0])
-      assert_equal(widget, @field)
-      refute(@doc.pages[0][:Annots].empty?)
-      @acro_form.delete_field(@field)
-      assert(@doc.pages[0][:Annots].empty?)
-      assert(@field.null?)
     end
 
     it "deletes all widget annotations from the document and the annotation array" do
@@ -494,14 +481,6 @@ describe HexaPDF::Type::AcroForm::Form do
       @acro_form.recalculate_fields
       assert_equal("10", @text3.field_value)
     end
-
-    it "ensures that only entries in /CO that are actually fields are used" do
-      @text1.field_value = "10"
-      @text3.set_calculate_action(:sfn, fields: 'text1')
-      @acro_form[:CO] = [nil, 5, [:some, :array], @doc.pages.root, @text3]
-      @acro_form.recalculate_fields
-      assert_equal("10", @text3.field_value)
-    end
   end
 
   describe "perform_validation" do
@@ -517,6 +496,11 @@ describe HexaPDF::Type::AcroForm::Form do
       refute(@acro_form.validate {|msg| assert_match(/font.*is not.*resource/, msg) })
       @acro_form.default_resources[:Font][:F1] = :yes
       assert(@acro_form.validate)
+    end
+
+    it "set the default appearance string, though optional, to a valid value to avoid problems" do
+      assert(@acro_form.validate)
+      assert_equal("0.0 g /F1 0 Tf", @acro_form[:DA])
     end
 
     describe "field hierarchy validation" do

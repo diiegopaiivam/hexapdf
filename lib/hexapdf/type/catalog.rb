@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -72,7 +72,7 @@ module HexaPDF
       define_field :URI,               type: Dictionary, version: '1.1'
       define_field :AcroForm,          type: :XXAcroForm, version: '1.2'
       define_field :Metadata,          type: :Metadata,  indirect: true, version: '1.4'
-      define_field :StructTreeRoot,    type: :StructTreeRoot, version: '1.3'
+      define_field :StructTreeRoot,    type: Dictionary, version: '1.3'
       define_field :MarkInfo,          type: :XXMarkInformation, version: '1.4'
       define_field :Lang,              type: String,     version: '1.4'
       define_field :SpiderInfo,        type: Dictionary, version: '1.3'
@@ -84,9 +84,6 @@ module HexaPDF
       define_field :Requirements,      type: PDFArray,   version: '1.7'
       define_field :Collection,        type: Dictionary, version: '1.7'
       define_field :NeedsRendering,    type: Boolean,    version: '1.7'
-      define_field :DSS,               type: Dictionary, version: '2.0'
-      define_field :AF,                type: PDFArray,   version: '2.0'
-      define_field :DPartRoot,         type: Dictionary, version: '2.0'
 
       # Returns +true+ since catalog objects must always be indirect.
       def must_be_indirect?

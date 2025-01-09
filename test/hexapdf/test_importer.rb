@@ -47,13 +47,6 @@ describe HexaPDF::Importer do
       refute_same(obj1, obj2)
       refute_same(obj1[:ref], obj2[:ref])
     end
-
-    it "duplicates the whole document" do
-      trailer = HexaPDF::Importer.copy(@dest, @source.trailer, allow_all: true)
-      refute_same(@source.catalog, trailer[:Root])
-      refute_same(@source.pages.root, trailer[:Root][:Pages])
-      assert_equal(90, trailer[:Root][:Pages][:Kids][0][:Rotate])
-    end
   end
 
   describe "import" do
@@ -128,16 +121,6 @@ describe HexaPDF::Importer do
       refute_same(dst_obj.data.stream, src_obj.data.stream)
     end
 
-    it "duplicates the stream if it is a FiberDoubleForString, e.g. when using Canvas" do
-      src_page = @source.pages[0]
-      src_page.canvas.line_width(10)
-      dst_page = @importer.import(src_page)
-      refute_same(dst_page, src_page)
-      refute_same(dst_page[:Contents].data.stream, src_page[:Contents].data.stream)
-      src_page.canvas.line_width(20)
-      assert_equal("10 w\n", dst_page.contents)
-    end
-
     it "does not import objects of type Catalog or Pages" do
       @obj[:catalog] = @source.catalog
       @obj[:pages] = @source.catalog.pages
@@ -145,13 +128,6 @@ describe HexaPDF::Importer do
 
       assert_nil(obj[:catalog])
       assert_nil(obj[:pages])
-    end
-
-    it "handles null values correctly" do
-      @source.add(@hash)
-      @source.delete(@hash)
-      obj = @importer.import(@obj)
-      assert_nil(obj[:hash])
     end
 
     it "imports Page objects correctly by copying the inherited values" do

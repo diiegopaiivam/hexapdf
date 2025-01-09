@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -54,7 +54,7 @@ module HexaPDF
       define_field :Type, type: Symbol, required: true, default: type
       define_field :OCGs, type: [:OCG, PDFArray]
       define_field :P,    type: Symbol, default: :AnyOn,
-                   allowed_values: [:AllOn, :AnyOn, :AnyOff, :AllOff]
+        allowed_values: [:AllOn, :AnyOn, :AnyOff, :AllOff]
       define_field :VE,   type: PDFArray
 
     end

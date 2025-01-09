@@ -497,10 +497,10 @@ describe HexaPDF::Document do
 
     it "returns all signature fields of the document" do
       form = @doc.acro_form(create: true)
-      sig1 = @doc.add({FT: :Sig, T: 'sig1', V: {k: :sig1}})
-      sig2 = @doc.add({FT: :Sig, T: 'sig2', V: {k: :sig2}})
+      sig1 = @doc.add({FT: :Sig, T: 'sig1', V: :sig1})
+      sig2 = @doc.add({FT: :Sig, T: 'sig2', V: :sig2})
       form.root_fields << sig1 << sig2
-      assert_equal([{k: :sig1}, {k: :sig2}], @doc.signatures.to_a)
+      assert_equal([:sig1, :sig2], @doc.signatures.to_a)
     end
 
     it "allows to conveniently sign a document" do
@@ -567,41 +567,5 @@ describe HexaPDF::Document do
 
   it "can be inspected and the output is not too large" do
     assert_match(/HexaPDF::Document:\d+/, @doc.inspect)
-  end
-
-  describe "duplicate" do
-    it "creates an in-memory copy" do
-      doc = HexaPDF::Document.new
-      doc.pages.add.canvas.line_width(10)
-      doc.trailer.info[:Author] = 'HexaPDF'
-      doc.dispatch_message(:complete_objects)
-
-      dupped = doc.duplicate
-      assert_equal('HexaPDF', dupped.trailer.info[:Author])
-      doc.pages[0].canvas.line_cap_style(:round)
-      assert_equal("10 w\n", dupped.pages[0].contents)
-    end
-
-    it "doesn't copy the encryption state" do
-      doc = HexaPDF::Document.new
-      doc.pages.add.canvas.line_width(10)
-      doc.encrypt
-      io = StringIO.new
-      doc.write(io)
-
-      doc = HexaPDF::Document.new(io: io)
-      dupped = doc.duplicate
-      assert_equal("10 w\n", dupped.pages[0].contents)
-      refute(dupped.encrypted?)
-    end
-  end
-
-  it "writes the document to a string" do
-    doc = HexaPDF::Document.new
-    doc.trailer.info[:test] = :test
-    str = doc.write_to_string(update_fields: false)
-    assert_equal(Encoding::ASCII_8BIT, str.encoding)
-    doc = HexaPDF::Document.new(io: StringIO.new(str))
-    assert_equal(:test, doc.trailer.info[:test])
   end
 end

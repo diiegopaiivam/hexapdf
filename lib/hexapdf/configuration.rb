@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -182,16 +182,6 @@ module HexaPDF
   # acro_form.default_font_size::
   #    A number specifying the default font size of AcroForm text fields which should be auto-sized.
   #
-  # acro_form.fallback_default_appearance::
-  #    A hash containging arguments for
-  #    HexaPDF::Type::AcroForm::VariableTextField#set_defaut_appearance_string which is used as
-  #    fallback for fields without a default appearance.
-  #
-  #    If this value is set to +nil+, an error is raised in case a variable text field cannot
-  #    resolve a default appearance string.
-  #
-  #    The default is the empty hash meaning the defaults from the method are used.
-  #
   # acro_form.fallback_font::
   #    The font that should be used when a variable text field references a font that cannot be used.
   #
@@ -286,13 +276,6 @@ module HexaPDF
   #    The most often used filters are implemented and readily available.
   #
   #    See PDF2.0 s7.4.1, ADB sH.3 3.3
-  #
-  # font.default::
-  #    This font is used by the layout engine when no font is specified but one is needed.
-  #
-  #    This is used, for example, for the font set on styles that don't have a font set.
-  #
-  #    The default value is 'Times'.
   #
   # font.fallback::
   #    An array of fallback font names to be used when replacing invalid glyphs.
@@ -495,7 +478,6 @@ module HexaPDF
     Configuration.new('acro_form.appearance_generator' => 'HexaPDF::Type::AcroForm::AppearanceGenerator',
                       'acro_form.create_appearances' => true,
                       'acro_form.default_font_size' => 10,
-                      'acro_form.fallback_default_appearance' => {},
                       'acro_form.fallback_font' => 'Helvetica',
                       'acro_form.on_invalid_value' => proc do |field, value|
                         raise HexaPDF::Error, "Invalid value #{value.inspect} for " \
@@ -536,7 +518,6 @@ module HexaPDF
                         Crypt: 'HexaPDF::Filter::Crypt',
                         Encryption: 'HexaPDF::Filter::Encryption',
                       },
-                      'font.default' => 'Times',
                       'font.fallback' => ['ZapfDingbats', 'Symbol'],
                       'font.map' => {},
                       'font.on_invalid_glyph' => method(:font_on_invalid_glyph),
@@ -598,7 +579,6 @@ module HexaPDF
                         optimize: 'HexaPDF::Task::Optimize',
                         dereference: 'HexaPDF::Task::Dereference',
                         pdfa: 'HexaPDF::Task::PDFA',
-                        merge_acro_form: 'HexaPDF::Task::MergeAcroForm',
                       })
 
   # The global configuration object, providing the following options:
@@ -721,13 +701,6 @@ module HexaPDF
                         Metadata: 'HexaPDF::Type::Metadata',
                         OutputIntent: 'HexaPDF::Type::OutputIntent',
                         XXDestOutputProfileRef: 'HexaPDF::Type::OutputIntent::DestOutputProfileRef',
-                        ExData: 'HexaPDF::Type::Annotations::MarkupAnnotation::ExData',
-                        CMap: 'HexaPDF::Type::CMap',
-                        StructTreeRoot: 'HexaPDF::Type::StructTreeRoot',
-                        StructElem: 'HexaPDF::Type::StructElem',
-                        Namespace: 'HexaPDF::Type::Namespace',
-                        MCR: 'HexaPDF::Type::MarkedContentReference',
-                        OBJR: 'HexaPDF::Type::ObjectReference',
                       },
                       'object.subtype_map' => {
                         nil => {

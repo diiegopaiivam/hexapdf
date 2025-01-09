@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -83,13 +83,6 @@ module HexaPDF
       # See: Writer#create_to_unicode_cmap
       def self.create_to_unicode_cmap(mapping)
         Writer.new.create_to_unicode_cmap(mapping)
-      end
-
-      # Returns a string containing a CID CMap that represents the given code to CID mapping.
-      #
-      # See: Writer#create_cid_cmap
-      def self.create_cid_cmap(mapping)
-        Writer.new.create_cid_cmap(mapping)
       end
 
       # The registry part of the CMap version.

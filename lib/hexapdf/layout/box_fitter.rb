@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -111,7 +111,6 @@ module HexaPDF
               @content_heights[@frame_index] = [@content_heights[@frame_index],
                                                 @initial_frame_y[@frame_index] - result.mask.y].max
               @fit_results << result
-              break unless box
             elsif !current_frame.find_next_region
               @frame_index += 1
             end

@@ -4,7 +4,7 @@
 # This file is part of HexaPDF.
 #
 # HexaPDF - A Versatile PDF Creation and Manipulation Library For Ruby
-# Copyright (C) 2014-2025 Thomas Leitner
+# Copyright (C) 2014-2024 Thomas Leitner
 #
 # HexaPDF is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License version 3 as
@@ -96,7 +96,6 @@ module HexaPDF
             draw_box, box = @frame.split(result)
             if draw_box
               @frame.draw(@canvas, result)
-              (box = draw_box; break) unless box
             elsif !@frame.find_next_region
               raise HexaPDF::Error, "Frame for canvas composer is full and box doesn't fit anymore"
             end
