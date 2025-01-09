@@ -284,7 +284,7 @@ module HexaPDF
         def finalize_objects(_signature_field, signature)
           signature[:Filter] = :'Adobe.PPKLite'
           signature[:SubFilter] = (signature_type == :pades ? :'ETSI.CAdES.detached' : :'adbe.pkcs7.detached')
-          signature[:M] = self.signing_time ||= Time.now
+          #signature[:M] = self.signing_time ||= Time.now
           signature[:Reason] = reason if reason
           signature[:Location] = location if location
           signature[:ContactInfo] = contact_info if contact_info
